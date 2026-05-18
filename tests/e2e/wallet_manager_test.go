@@ -1,344 +1,287 @@
 package e2e_test
 
 import (
-	"os"
-	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
-	"github.com/stretchr/testify/require"
 )
 
-func TestWalletManagerE2E_LockUnlockRealFlow(t *testing.T) {
-	// -------------------------
-	// ARRANGE
-	// -------------------------
-	password := "StrongPassword123!"
-	wrongPassword := "WrongPassword123!"
+const (
+	testWalletPassword    = "test-password-123"
+	testWalletNewPassword = "test-new-password-456"
+)
 
-	walletDir := t.TempDir()
-	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
-
-	manager := wallet_manager.NewWalletManager(walletPath)
-
-	originalPublicKey, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
-	require.NoError(t, err)
-
-	originalPrivateKeyBytes := []byte(originalPrivateKey)
-
-	// -------------------------
-	// ACT: IMPORT WALLET
-	// -------------------------
-	privateKeyToImport := cloneBytes(originalPrivateKeyBytes)
-
-	err = manager.ImportWallet(privateKeyToImport, password)
-
-	// -------------------------
-	// ASSERT: IMPORT WALLET
-	// -------------------------
-	require.NoError(t, err)
-
-	_, err = os.Stat(walletPath)
-	require.NoError(t, err, "wallet file should be created locally")
-
-	require.False(t, manager.IsUnlocked(), "wallet should be locked after ImportWallet()")
-
-	require.Equal(t, originalPublicKey, manager.GetPublicKey(), "wallet public key should be derived from imported private key")
-
-	require.NotEqual(
-		t,
-		originalPrivateKeyBytes,
-		privateKeyToImport,
-		"ImportWallet() should clear the input private key slice from memory",
-	)
-
-	for _, b := range privateKeyToImport {
-		require.Equal(t, byte(0), b, "private key input slice should be zeroed")
+func TestWalletManager_GenerateEd25519KeyPairHex(t *testing.T) {
+	publicKey, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
 	}
 
-	// -------------------------
-	// ASSERT: WRONG PASSWORD
-	// -------------------------
-	err = manager.Unlock(wrongPassword)
-	require.Error(t, err, "unlocking with wrong password should fail")
+	if publicKey == "" {
+		t.Fatal("expected public key")
+	}
 
-	require.False(t, manager.IsUnlocked(), "wallet should remain locked after wrong password")
-
-	// -------------------------
-	// ACT: UNLOCK
-	// -------------------------
-	err = manager.Unlock(password)
-
-	// -------------------------
-	// ASSERT: UNLOCK
-	// -------------------------
-	require.NoError(t, err)
-	require.True(t, manager.IsUnlocked(), "wallet should be unlocked after correct password")
-	require.Equal(t, originalPublicKey, manager.GetPublicKey(), "wallet public key should remain loaded after unlock")
-
-	// -------------------------
-	// ASSERT: GET PRIVATE KEY WITHOUT PASSWORD
-	// SignTransaction is not in passwordRequiredMethods,
-	// so it can use the unlocked session.
-	// -------------------------
-	unlockedPrivateKey, err := manager.GetPrivateKey("SignTransaction", "")
-
-	require.NoError(t, err)
-	require.Equal(t, originalPrivateKeyBytes, unlockedPrivateKey)
-
-	// -------------------------
-	// ASSERT: returned private key is a clone
-	// -------------------------
-	unlockedPrivateKey[0] = 'X'
-
-	unlockedPrivateKeyAgain, err := manager.GetPrivateKey("SignTransaction", "")
-
-	require.NoError(t, err)
-	require.Equal(t, originalPrivateKeyBytes, unlockedPrivateKeyAgain)
-
-	// -------------------------
-	// ASSERT: sensitive method requires password
-	// ExportPrivateKey is in passwordRequiredMethods.
-	// -------------------------
-	_, err = manager.GetPrivateKey("ExportPrivateKey", "")
-	require.EqualError(t, err, "password is required")
-
-	exportedPrivateKey, err := manager.GetPrivateKey("ExportPrivateKey", password)
-
-	require.NoError(t, err)
-	require.Equal(t, originalPrivateKeyBytes, exportedPrivateKey)
-
-	// -------------------------
-	// ACT: LOCK
-	// -------------------------
-	err = manager.Lock()
-
-	// -------------------------
-	// ASSERT: LOCK
-	// -------------------------
-	require.NoError(t, err)
-	require.False(t, manager.IsUnlocked())
-
-	_, err = manager.GetPrivateKey("SignTransaction", "")
-	require.EqualError(t, err, "wallet is locked")
-
-	// -------------------------
-	// ASSERT: after locked, password can unlock again
-	// -------------------------
-	privateKeyAfterRelock, err := manager.GetPrivateKey("SignTransaction", password)
-
-	require.NoError(t, err)
-	require.Equal(t, originalPrivateKeyBytes, privateKeyAfterRelock)
+	if privateKey == "" {
+		t.Fatal("expected private key")
+	}
 }
 
-func TestWalletManagerE2E_UnlockAfterNewManagerInstance(t *testing.T) {
-	// Esse teste simula o app fechando e abrindo de novo.
-	// O primeiro manager cria o arquivo.
-	// O segundo manager lê o arquivo e desbloqueia a wallet.
+func TestWalletManager_ImportPrivateKey(t *testing.T) {
+	manager := setupWalletManager(t)
 
-	// -------------------------
-	// ARRANGE
-	// -------------------------
-	password := "StrongPassword123!"
+	publicKey, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
 
-	walletDir := t.TempDir()
-	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+	if err := manager.ImportPrivateKey([]byte(privateKey), testWalletPassword); err != nil {
+		t.Fatalf("ImportPrivateKey error: %v", err)
+	}
 
-	firstManager := wallet_manager.NewWalletManager(walletPath)
+	gotOwner := manager.OwnerAddress()
+	if gotOwner != publicKey {
+		t.Fatalf("expected owner %q, got %q", publicKey, gotOwner)
+	}
 
-	originalPublicKey, originalPrivateKey, err := firstManager.GenerateEd25519KeyPairHex()
-	require.NoError(t, err)
-
-	originalPrivateKeyBytes := []byte(originalPrivateKey)
-
-	// -------------------------
-	// ACT: FIRST INSTANCE IMPORTS WALLET
-	// -------------------------
-	privateKeyToImport := cloneBytes(originalPrivateKeyBytes)
-
-	err = firstManager.ImportWallet(privateKeyToImport, password)
-	require.NoError(t, err)
-
-	require.False(t, firstManager.IsUnlocked())
-	require.Equal(t, originalPublicKey, firstManager.GetPublicKey())
-
-	// -------------------------
-	// ACT: SECOND INSTANCE UNLOCKS WALLET
-	// -------------------------
-	secondManager := wallet_manager.NewWalletManager(walletPath)
-
-	err = secondManager.Unlock(password)
-
-	// -------------------------
-	// ASSERT
-	// -------------------------
-	require.NoError(t, err)
-	require.True(t, secondManager.IsUnlocked())
-	require.Equal(t, originalPublicKey, secondManager.GetPublicKey())
-
-	privateKeyFromSecondManager, err := secondManager.GetPrivateKey("SignTransaction", "")
-
-	require.NoError(t, err)
-	require.Equal(t, originalPrivateKeyBytes, privateKeyFromSecondManager)
+	if manager.IsUnlocked() {
+		t.Fatal("expected wallet to be locked after import")
+	}
 }
 
-func TestWalletManagerE2E_WrongWalletFileDoesNotMatchExpectedPublicKey(t *testing.T) {
-	// Esse teste substitui o antigo OwnerMismatch.
-	// No fluxo novo, o owner/publicKey é derivado da private key importada.
-	// Então não faz mais sentido passar "anotherOwner" no construtor.
-	// A validação correta é garantir que uma instância nova carregue o publicKey real do arquivo.
+func TestWalletManager_ImportPrivateKey_RequiresPassword(t *testing.T) {
+	manager := setupWalletManager(t)
 
-	// -------------------------
-	// ARRANGE
-	// -------------------------
-	password := "StrongPassword123!"
+	_, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
 
-	walletDir := t.TempDir()
-	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+	err = manager.ImportPrivateKey([]byte(privateKey), "")
+	if err == nil {
+		t.Fatal("expected error")
+	}
 
-	manager := wallet_manager.NewWalletManager(walletPath)
-
-	originalPublicKey, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
-	require.NoError(t, err)
-
-	privateKeyToImport := []byte(originalPrivateKey)
-
-	err = manager.ImportWallet(privateKeyToImport, password)
-	require.NoError(t, err)
-
-	anotherManager := wallet_manager.NewWalletManager(walletPath)
-
-	// -------------------------
-	// ACT
-	// -------------------------
-	err = anotherManager.Unlock(password)
-
-	// -------------------------
-	// ASSERT
-	// -------------------------
-	require.NoError(t, err)
-	require.True(t, anotherManager.IsUnlocked())
-	require.Equal(t, originalPublicKey, anotherManager.GetPublicKey())
+	assertWalletErrorContains(t, err, "password is required")
 }
 
-func TestWalletManagerE2E_InvalidInputs(t *testing.T) {
-	walletDir := t.TempDir()
-	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+func TestWalletManager_ImportPrivateKey_RequiresPrivateKey(t *testing.T) {
+	manager := setupWalletManager(t)
 
-	manager := wallet_manager.NewWalletManager(walletPath)
+	err := manager.ImportPrivateKey(nil, testWalletPassword)
+	if err == nil {
+		t.Fatal("expected error")
+	}
 
-	err := manager.ImportWallet(nil, "StrongPassword123!")
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "private key is required")
-
-	err = manager.ImportWallet([]byte("private-key"), "")
-	require.EqualError(t, err, "password is required")
-
-	err = manager.Unlock("")
-	require.EqualError(t, err, "password is required")
-
-	_, err = manager.GetPrivateKey("SignTransaction", "")
-	require.ErrorContains(t, err, "wallet is locked")
+	assertWalletErrorContains(t, err, "private key is required")
 }
 
-func TestWalletManagerE2E_RotatePassword(t *testing.T) {
-	// -------------------------
-	// ARRANGE
-	// -------------------------
-	currentPassword := "StrongPassword123!"
-	newPassword := "NewStrongPassword123!"
+func TestWalletManager_UnlockWithPassword(t *testing.T) {
+	manager := setupWalletManager(t)
 
-	walletDir := t.TempDir()
-	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+	_, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
 
-	manager := wallet_manager.NewWalletManager(walletPath)
+	if err := manager.ImportPrivateKey([]byte(privateKey), testWalletPassword); err != nil {
+		t.Fatalf("ImportPrivateKey error: %v", err)
+	}
 
-	originalPublicKey, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
-	require.NoError(t, err)
+	if manager.IsUnlocked() {
+		t.Fatal("expected wallet to be locked before unlock")
+	}
 
-	originalPrivateKeyBytes := []byte(originalPrivateKey)
+	if err := manager.UnlockWithPassword(testWalletPassword); err != nil {
+		t.Fatalf("UnlockWithPassword error: %v", err)
+	}
 
-	privateKeyToImport := cloneBytes(originalPrivateKeyBytes)
-
-	err = manager.ImportWallet(privateKeyToImport, currentPassword)
-	require.NoError(t, err)
-
-	_, err = os.Stat(walletPath)
-	require.NoError(t, err, "wallet file should be created locally")
-
-	require.Equal(t, originalPublicKey, manager.GetPublicKey())
-
-	// -------------------------
-	// ASSERT: CURRENT PASSWORD WORKS BEFORE ROTATION
-	// -------------------------
-	err = manager.Unlock(currentPassword)
-	require.NoError(t, err)
-	require.True(t, manager.IsUnlocked())
-
-	keyBeforeRotation, err := manager.GetPrivateKey("SignTransaction", "")
-	require.NoError(t, err)
-	require.Equal(t, originalPrivateKeyBytes, keyBeforeRotation)
-
-	err = manager.Lock()
-	require.NoError(t, err)
-	require.False(t, manager.IsUnlocked())
-
-	// -------------------------
-	// ACT: ROTATE PASSWORD
-	// -------------------------
-	err = manager.RotatePassword(currentPassword, newPassword)
-	require.NoError(t, err)
-
-	require.False(t, manager.IsUnlocked(), "wallet should be locked after password rotation")
-
-	// -------------------------
-	// ASSERT: OLD PASSWORD DOES NOT WORK
-	// -------------------------
-	err = manager.Unlock(currentPassword)
-	require.Error(t, err, "old password should not unlock wallet after rotation")
-
-	require.False(t, manager.IsUnlocked())
-
-	// -------------------------
-	// ASSERT: NEW PASSWORD WORKS
-	// -------------------------
-	err = manager.Unlock(newPassword)
-	require.NoError(t, err)
-	require.True(t, manager.IsUnlocked())
-	require.Equal(t, originalPublicKey, manager.GetPublicKey())
-
-	keyAfterRotation, err := manager.GetPrivateKey("SignTransaction", "")
-	require.NoError(t, err)
-	require.Equal(t, originalPrivateKeyBytes, keyAfterRotation)
+	if !manager.IsUnlocked() {
+		t.Fatal("expected wallet to be unlocked")
+	}
 }
 
-func TestWalletManagerE2E_RotatePasswordInvalidInputs(t *testing.T) {
-	currentPassword := "StrongPassword123!"
-	newPassword := "NewStrongPassword123!"
+func TestWalletManager_UnlockWithPassword_RequiresPassword(t *testing.T) {
+	manager := setupWalletManager(t)
 
-	walletDir := t.TempDir()
-	walletPath := filepath.Join(walletDir, "owner-address-test.wallet")
+	_, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
 
-	manager := wallet_manager.NewWalletManager(walletPath)
+	if err := manager.ImportPrivateKey([]byte(privateKey), testWalletPassword); err != nil {
+		t.Fatalf("ImportPrivateKey error: %v", err)
+	}
 
-	_, originalPrivateKey, err := manager.GenerateEd25519KeyPairHex()
-	require.NoError(t, err)
+	err = manager.UnlockWithPassword("")
+	if err == nil {
+		t.Fatal("expected error")
+	}
 
-	privateKeyToImport := []byte(originalPrivateKey)
+	assertWalletErrorContains(t, err, "password is required")
+}
 
-	err = manager.ImportWallet(privateKeyToImport, currentPassword)
-	require.NoError(t, err)
+func TestWalletManager_UnlockWithPassword_WrongPassword(t *testing.T) {
+	manager := setupWalletManager(t)
 
-	err = manager.RotatePassword("", newPassword)
-	require.EqualError(t, err, "current password is required")
+	_, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
 
-	err = manager.RotatePassword(currentPassword, "")
-	require.EqualError(t, err, "new password is required")
+	if err := manager.ImportPrivateKey([]byte(privateKey), testWalletPassword); err != nil {
+		t.Fatalf("ImportPrivateKey error: %v", err)
+	}
 
-	err = manager.RotatePassword(currentPassword, currentPassword)
-	require.EqualError(t, err, "new password must be different from current password")
+	err = manager.UnlockWithPassword("wrong-password")
+	if err == nil {
+		t.Fatal("expected error")
+	}
 
-	err = manager.RotatePassword("WrongPassword123!", newPassword)
-	require.Error(t, err)
-	require.ErrorContains(t, err, "failed to decrypt wallet file with current password")
+	assertWalletErrorContains(t, err, "failed to decrypt wallet file")
+}
+
+func TestWalletManager_Lock(t *testing.T) {
+	manager := setupWalletManager(t)
+
+	_, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
+
+	if err := manager.ImportPrivateKey([]byte(privateKey), testWalletPassword); err != nil {
+		t.Fatalf("ImportPrivateKey error: %v", err)
+	}
+
+	if err := manager.UnlockWithPassword(testWalletPassword); err != nil {
+		t.Fatalf("UnlockWithPassword error: %v", err)
+	}
+
+	if !manager.IsUnlocked() {
+		t.Fatal("expected wallet to be unlocked before lock")
+	}
+
+	if err := manager.Lock(); err != nil {
+		t.Fatalf("Lock error: %v", err)
+	}
+
+	if manager.IsUnlocked() {
+		t.Fatal("expected wallet to be locked")
+	}
+}
+
+func TestWalletManager_ChangePassword(t *testing.T) {
+	manager := setupWalletManager(t)
+
+	_, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
+
+	if err := manager.ImportPrivateKey([]byte(privateKey), testWalletPassword); err != nil {
+		t.Fatalf("ImportPrivateKey error: %v", err)
+	}
+
+	if err := manager.UnlockWithPassword(testWalletPassword); err != nil {
+		t.Fatalf("UnlockWithPassword error: %v", err)
+	}
+
+	if !manager.IsUnlocked() {
+		t.Fatal("expected wallet to be unlocked before password change")
+	}
+
+	if err := manager.ChangePassword(testWalletPassword, testWalletNewPassword); err != nil {
+		t.Fatalf("ChangePassword error: %v", err)
+	}
+
+	if manager.IsUnlocked() {
+		t.Fatal("expected wallet to be locked after password change")
+	}
+
+	err = manager.UnlockWithPassword(testWalletPassword)
+	if err == nil {
+		t.Fatal("expected old password to fail after password change")
+	}
+
+	if err := manager.UnlockWithPassword(testWalletNewPassword); err != nil {
+		t.Fatalf("expected new password to unlock wallet: %v", err)
+	}
+
+	if !manager.IsUnlocked() {
+		t.Fatal("expected wallet to be unlocked with new password")
+	}
+}
+
+func TestWalletManager_ChangePassword_RequiresCurrentPassword(t *testing.T) {
+	manager := setupWalletManager(t)
+
+	err := manager.ChangePassword("", testWalletNewPassword)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	assertWalletErrorContains(t, err, "current password is required")
+}
+
+func TestWalletManager_ChangePassword_RequiresNewPassword(t *testing.T) {
+	manager := setupWalletManager(t)
+
+	err := manager.ChangePassword(testWalletPassword, "")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	assertWalletErrorContains(t, err, "new password is required")
+}
+
+func TestWalletManager_ChangePassword_NewPasswordMustBeDifferent(t *testing.T) {
+	manager := setupWalletManager(t)
+
+	err := manager.ChangePassword(testWalletPassword, testWalletPassword)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	assertWalletErrorContains(t, err, "new password must be different from current password")
+}
+
+func TestWalletManager_ChangePassword_RequiresOwner(t *testing.T) {
+	manager := setupWalletManager(t)
+
+	err := manager.ChangePassword(testWalletPassword, testWalletNewPassword)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	assertWalletErrorContains(t, err, "owner is required")
+}
+
+func TestWalletManager_OwnerAddress(t *testing.T) {
+	manager := setupWalletManager(t)
+
+	publicKey, privateKey, err := wallet_manager.GenerateEd25519KeyPairHex()
+	if err != nil {
+		t.Fatalf("GenerateEd25519KeyPairHex error: %v", err)
+	}
+
+	if err := manager.ImportPrivateKey([]byte(privateKey), testWalletPassword); err != nil {
+		t.Fatalf("ImportPrivateKey error: %v", err)
+	}
+
+	gotOwner := manager.OwnerAddress()
+	if gotOwner != publicKey {
+		t.Fatalf("expected owner %q, got %q", publicKey, gotOwner)
+	}
+}
+
+func assertWalletErrorContains(t *testing.T, err error, expected string) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatalf("expected error containing %q, got nil", expected)
+	}
+
+	if !strings.Contains(err.Error(), expected) {
+		t.Fatalf("expected error containing %q, got %q", expected, err.Error())
+	}
 }

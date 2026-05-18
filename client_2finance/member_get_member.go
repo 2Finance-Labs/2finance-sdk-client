@@ -11,7 +11,7 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
 )
 
-func (c *networkClient) AddMgM(
+func (c *NetworkClient) AddMgM(
 	address string,
 	owner string,
 	tokenAddress string,
@@ -21,7 +21,7 @@ func (c *networkClient) AddMgM(
 	expireAt time.Time,
 	paused bool,
 ) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -85,13 +85,13 @@ func (c *networkClient) AddMgM(
 	return contractOutput, nil
 }
 
-func (c *networkClient) UpdateMgM(
+func (c *NetworkClient) UpdateMgM(
 	mgmAddress string,
 	amount string,
 	startAt time.Time,
 	expireAt time.Time,
 ) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -131,7 +131,7 @@ func (c *networkClient) UpdateMgM(
 	return contractOutput, nil
 }
 
-func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractOutput, error) {
+func (c *NetworkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -143,7 +143,7 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 		return types.ContractOutput{}, fmt.Errorf("pause must be true: Pause: %t", pause)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -179,7 +179,7 @@ func (c *networkClient) PauseMgM(mgmAddress string, pause bool) (types.ContractO
 	return contractOutput, nil
 }
 
-func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.ContractOutput, error) {
+func (c *NetworkClient) UnpauseMgM(mgmAddress string, pause bool) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -191,7 +191,7 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 		return types.ContractOutput{}, fmt.Errorf("pause must be false: Pause: %t", pause)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -225,7 +225,7 @@ func (c *networkClient) UnpauseMgM(mgmAddress string, pause bool) (types.Contrac
 	return contractOutput, nil
 }
 
-func (c *networkClient) DepositMgM(
+func (c *NetworkClient) DepositMgM(
 	mgmAddress string,
 	amount string,
 	tokenType string,
@@ -251,7 +251,7 @@ func (c *networkClient) DepositMgM(
 		}
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -288,7 +288,7 @@ func (c *networkClient) DepositMgM(
 	return contractOutput, nil
 }
 
-func (c *networkClient) WithdrawMgM(
+func (c *NetworkClient) WithdrawMgM(
 	mgmAddress string,
 	amount string,
 	tokenType string,
@@ -314,7 +314,7 @@ func (c *networkClient) WithdrawMgM(
 		}
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -351,7 +351,7 @@ func (c *networkClient) WithdrawMgM(
 	return contractOutput, nil
 }
 
-func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress string, password string) (types.ContractOutput, error) {
+func (c *NetworkClient) AddInviterMember(mgmAddress string, inviterAddress string, password string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -363,7 +363,7 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 		return types.ContractOutput{}, fmt.Errorf("password not set")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -400,7 +400,7 @@ func (c *networkClient) AddInviterMember(mgmAddress string, inviterAddress strin
 	return contractOutput, nil
 }
 
-func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress string, newPassword string) (types.ContractOutput, error) {
+func (c *NetworkClient) UpdateInviterPassword(mgmAddress string, inviterAddress string, newPassword string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -411,7 +411,7 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 		return types.ContractOutput{}, fmt.Errorf("new password not set")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -446,7 +446,7 @@ func (c *networkClient) UpdateInviterPassword(mgmAddress string, inviterAddress 
 	return contractOutput, nil
 }
 
-func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
+func (c *NetworkClient) DeleteInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -454,7 +454,7 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -489,7 +489,7 @@ func (c *networkClient) DeleteInviterMember(mgmAddress string, inviterAddress st
 	return contractOutput, nil
 }
 
-func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string) (types.ContractOutput, error) {
+func (c *NetworkClient) ClaimReward(mgmAddress, invitedAddress, password string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -501,7 +501,7 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 		return types.ContractOutput{}, fmt.Errorf("password not set")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -537,7 +537,7 @@ func (c *networkClient) ClaimReward(mgmAddress, invitedAddress, password string)
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) {
+func (c *NetworkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -545,7 +545,7 @@ func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) 
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -561,7 +561,7 @@ func (c *networkClient) GetMgM(mgmAddress string) (types.ContractOutput, error) 
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
+func (c *NetworkClient) GetInviterMember(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -576,7 +576,7 @@ func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress strin
 		return types.ContractOutput{}, fmt.Errorf("invalid inviter address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -596,7 +596,7 @@ func (c *networkClient) GetInviterMember(mgmAddress string, inviterAddress strin
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
+func (c *NetworkClient) GetClaimInviter(mgmAddress string, inviterAddress string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -611,7 +611,7 @@ func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string
 		return types.ContractOutput{}, fmt.Errorf("invalid inviter address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -631,7 +631,7 @@ func (c *networkClient) GetClaimInviter(mgmAddress string, inviterAddress string
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string) (types.ContractOutput, error) {
+func (c *NetworkClient) GetClaimInvited(mgmAddress string, invitedAddress string) (types.ContractOutput, error) {
 	if mgmAddress == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -646,7 +646,7 @@ func (c *networkClient) GetClaimInvited(mgmAddress string, invitedAddress string
 		return types.ContractOutput{}, fmt.Errorf("invalid invited address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

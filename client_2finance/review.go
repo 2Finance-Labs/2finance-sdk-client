@@ -11,7 +11,7 @@ import (
 )
 
 // AddReview creates a new review (to = DEPLOY address). The tx sender (c.publicKey) becomes owner.
-func (c *networkClient) AddReview(
+func (c *NetworkClient) AddReview(
 	address, reviewer, reviewee, subjectType, subjectID string,
 	rating int,
 	comment string,
@@ -20,7 +20,7 @@ func (c *networkClient) AddReview(
 	startAt, expiredAt time.Time,
 	hidden bool,
 ) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
 	}
@@ -83,7 +83,7 @@ func (c *networkClient) AddReview(
 }
 
 // UpdateReview modifies fields of an existing review.
-func (c *networkClient) UpdateReview(
+func (c *NetworkClient) UpdateReview(
 	address, subjectType, subjectID string,
 	rating int,
 	comment string,
@@ -98,7 +98,7 @@ func (c *networkClient) UpdateReview(
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -141,7 +141,7 @@ func (c *networkClient) UpdateReview(
 }
 
 // HideReview toggles the hidden state. OnlyOwner.
-func (c *networkClient) HideReview(address string, hidden bool) (types.ContractOutput, error) {
+func (c *NetworkClient) HideReview(address string, hidden bool) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -149,7 +149,7 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -170,7 +170,7 @@ func (c *networkClient) HideReview(address string, hidden bool) (types.ContractO
 }
 
 // VoteHelpful registers an up/down helpful vote for a review.
-func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (types.ContractOutput, error) {
+func (c *NetworkClient) VoteHelpful(address, voter string, isHelpful bool) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -184,7 +184,7 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 		return types.ContractOutput{}, fmt.Errorf("invalid voter address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -206,7 +206,7 @@ func (c *networkClient) VoteHelpful(address, voter string, isHelpful bool) (type
 }
 
 // ReportReview flags a review with a reason string by a reporter.
-func (c *networkClient) ReportReview(address, reporter, reason string) (types.ContractOutput, error) {
+func (c *NetworkClient) ReportReview(address, reporter, reason string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -223,7 +223,7 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 		return types.ContractOutput{}, fmt.Errorf("reason not set")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -245,7 +245,7 @@ func (c *networkClient) ReportReview(address, reporter, reason string) (types.Co
 }
 
 // ModerateReview applies a moderation action (e.g., approve/reject/remove) with an optional note. OnlyModerator/Owner per contract rules.
-func (c *networkClient) ModerateReview(address, action, note string) (types.ContractOutput, error) {
+func (c *NetworkClient) ModerateReview(address, action, note string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -256,7 +256,7 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 		return types.ContractOutput{}, fmt.Errorf("action not set")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -278,8 +278,8 @@ func (c *networkClient) ModerateReview(address, action, note string) (types.Cont
 }
 
 // GetReview retrieves a single review state.
-func (c *networkClient) GetReview(address string) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+func (c *NetworkClient) GetReview(address string) (types.ContractOutput, error) {
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -297,13 +297,13 @@ func (c *networkClient) GetReview(address string) (types.ContractOutput, error) 
 }
 
 // ListReviews queries reviews with filters + pagination.
-func (c *networkClient) ListReviews(
+func (c *NetworkClient) ListReviews(
 	reviewer, reviewee, subjectType, subjectID string,
 	includeHidden *bool,
 	minRating, maxRating, page, limit int,
 	asc bool,
 ) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

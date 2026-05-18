@@ -18,7 +18,7 @@ import (
 // Amount must be sent considering decimals
 // For example, if the amount is 100000, and decimals is 18, the amount in database will be 100000000000000000000000
 // if the amonut is 0,0000000001, and decimals is 18, the amount in database will be 100000000
-func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput, error) {
+func (c *NetworkClient) AddWallet(address, pubKey string) (types.ContractOutput, error) {
 	if pubKey == "" {
 		return types.ContractOutput{}, fmt.Errorf("public key not set")
 	}
@@ -32,7 +32,7 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 		return types.ContractOutput{}, fmt.Errorf("invalid contract address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	to := address
 	method := walletV1.METHOD_ADD_WALLET
@@ -60,7 +60,7 @@ func (c *networkClient) AddWallet(address, pubKey string) (types.ContractOutput,
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetWalletByPublicKey(pubKey string) (types.ContractOutput, error) {
+func (c *NetworkClient) GetWalletByPublicKey(pubKey string) (types.ContractOutput, error) {
 
 	if pubKey == "" {
 		return types.ContractOutput{}, fmt.Errorf("public key not set")
@@ -84,7 +84,7 @@ func (c *networkClient) GetWalletByPublicKey(pubKey string) (types.ContractOutpu
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetWalletByAddress(address string) (types.ContractOutput, error) {
+func (c *NetworkClient) GetWalletByAddress(address string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("contract address not set")
 	}
