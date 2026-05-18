@@ -12,6 +12,8 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/log"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
+	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
+
 )
 
 func TestContractDeployment1(t *testing.T) {
@@ -79,13 +81,13 @@ func TestContractDeployment2(t *testing.T) {
 func Test_ImportWallet_Getters(t *testing.T) {
 	signer := setupSignerWallet(t)
 
-	gotPub := signer.Wallet.GetPublicKey()
+	gotPub := signer.Wallet.OwnerAddress()
 	if gotPub == "" {
-		t.Fatalf("GetPublicKey returned empty")
+		t.Fatalf("OwnerAddress returned empty")
 	}
 
 	if err := keys.ValidateEDDSAPublicKeyHex(gotPub); err != nil {
-		t.Fatalf("GetPublicKey invalid: %v", err)
+		t.Fatalf("OwnerAddress invalid: %v", err)
 	}
 
 	edPub, err := keys.PublicKeyFromEd25519PrivateHex(signer.PrivateKey)
@@ -99,9 +101,8 @@ func Test_ImportWallet_Getters(t *testing.T) {
 }
 
 func Test_GenerateKeyEd25519(t *testing.T) {
-	wm := setupWalletManager(t)
 
-	pub, priv, err := wm.GenerateEd25519KeyPairHex()
+	pub, priv, err := wallet_manager.GenerateEd25519KeyPairHex()
 	if err != nil {
 		t.Fatalf("GenerateKeyEd25519: %v", err)
 	}
@@ -160,14 +161,18 @@ func Test_SignTransaction(t *testing.T) {
 		t.Fatalf("MapToJSONB: %v", err)
 	}
 
+	inputTransaction := wallet_manager.SignTransactionInput{
+		ChainID: chainId,
+		From:    signer.PublicKey,
+		To:      toPub,
+		Method:  "noop_method",
+		Data:    jb,
+		Version: version,
+		UUID7:   uuid7,
+	}
+
 	signed, err := signer.Wallet.SignTransaction(
-		chainId,
-		signer.PublicKey,
-		toPub,
-		"noop_method",
-		jb,
-		version,
-		uuid7,
+		inputTransaction,
 	)
 	if err != nil {
 		t.Fatalf("SignTransaction: %v", err)

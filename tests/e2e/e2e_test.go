@@ -147,7 +147,7 @@ func waitUntil(t *testing.T, d time.Duration, pred func() bool) {
 }
 
 func genKey(t *testing.T, w wallet_manager.IWalletManager) (pub, priv string) {
-	pub, priv, err := w.GenerateEd25519KeyPairHex()
+	pub, priv, err := wallet_manager.GenerateEd25519KeyPairHex()
 	if err != nil {
 		t.Fatalf("GenerateEd25519KeyPairHex: %v", err)
 	}
@@ -155,27 +155,29 @@ func genKey(t *testing.T, w wallet_manager.IWalletManager) (pub, priv string) {
 	return pub, priv
 }
 
-func importAndUnlockWallet(t *testing.T, wm wallet_manager.IWalletManager, expectedPublicKey string, privateKey string) {
-	t.Helper()
 
-	privateKeyBytes := []byte(privateKey)
-
-	if err := wm.ImportWallet(privateKeyBytes, E2E_WALLET_PASSWORD); err != nil {
-		t.Fatalf("ImportWallet: %v", err)
-	}
-
-	gotPublicKey := wm.GetPublicKey()
-	if gotPublicKey != expectedPublicKey {
-		t.Fatalf("wallet public key mismatch: want %s, got %s", expectedPublicKey, gotPublicKey)
-	}
-
-	if err := wm.Unlock(E2E_WALLET_PASSWORD); err != nil {
-		t.Fatalf("Unlock: %v", err)
-	}
-}
 
 func useWallet(t *testing.T, c client2f.Client2FinanceNetwork, wm wallet_manager.IWalletManager) {
 	t.Helper()
 
 	c.SetWalletManager(wm)
+}
+
+func importAndUnlockWallet(t *testing.T, wm wallet_manager.IWalletManager, expectedPublicKey string, privateKey string) {
+	t.Helper()
+
+	privateKeyBytes := []byte(privateKey)
+
+	if err := wm.ImportPrivateKey(privateKeyBytes, E2E_WALLET_PASSWORD); err != nil {
+		t.Fatalf("ImportPrivateKey: %v", err)
+	}
+
+	gotPublicKey := wm.OwnerAddress()
+	if gotPublicKey != expectedPublicKey {
+		t.Fatalf("wallet public key mismatch: want %s, got %s", expectedPublicKey, gotPublicKey)
+	}
+
+	if err := wm.UnlockWithPassword(E2E_WALLET_PASSWORD); err != nil {
+		t.Fatalf("UnlockWithPassword: %v", err)
+	}
 }

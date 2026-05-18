@@ -14,7 +14,7 @@ import (
 // Write methods
 // ---------------------------------------------
 
-func (c *networkClient) AddCoupon(
+func (c *NetworkClient) AddCoupon(
 	address string, // optional, depends on your infra
 	discountType string, // "percentage" | "fixed-amount"
 	percentageBPS string, // required if percentage
@@ -43,7 +43,7 @@ func (c *networkClient) AddCoupon(
 ) (types.ContractOutput, error) {
 
 	// Sender validations
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -142,7 +142,7 @@ func (c *networkClient) AddCoupon(
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) UpdateCoupon(
+func (c *NetworkClient) UpdateCoupon(
 	address string,
 	tokenAddress string,
 	discountType string,
@@ -172,7 +172,7 @@ func (c *networkClient) UpdateCoupon(
 		return types.ContractOutput{}, fmt.Errorf("invalid discount_type: %s", discountType)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -204,7 +204,7 @@ func (c *networkClient) UpdateCoupon(
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractOutput, error) {
+func (c *NetworkClient) PauseCoupon(address string, pause bool) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -215,7 +215,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 		return types.ContractOutput{}, fmt.Errorf("pause must be true: paused=%t", pause)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -237,7 +237,7 @@ func (c *networkClient) PauseCoupon(address string, pause bool) (types.ContractO
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.ContractOutput, error) {
+func (c *NetworkClient) UnpauseCoupon(address string, pause bool) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -248,7 +248,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 		return types.ContractOutput{}, fmt.Errorf("pause must be false: paused=%t", pause)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -270,7 +270,7 @@ func (c *networkClient) UnpauseCoupon(address string, pause bool) (types.Contrac
 	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 }
 
-func (c *networkClient) IssueVoucher(
+func (c *NetworkClient) IssueVoucher(
 	address string, // coupon address
 	toAddress string,
 	amount string, // integer string in token base units
@@ -291,7 +291,7 @@ func (c *networkClient) IssueVoucher(
 		return types.ContractOutput{}, fmt.Errorf("amount not set")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -317,7 +317,7 @@ func (c *networkClient) IssueVoucher(
 // Redeem a coupon for an order amount using a passcode preimage.
 // NOTE: If you bind the hash to the redeemer (recommended), your handler
 // should validate msg.sender and the recomputed hash.
-func (c *networkClient) RedeemVoucher(
+func (c *NetworkClient) RedeemVoucher(
 	address string, // voucher address
 	orderAmount string, // integer string in token base units
 	passcode string,
@@ -340,7 +340,7 @@ func (c *networkClient) RedeemVoucher(
 		return types.ContractOutput{}, fmt.Errorf("voucher_uuid must be set for non-fungible tokens")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -368,8 +368,8 @@ func (c *networkClient) RedeemVoucher(
 // Read methods
 // ---------------------------------------------
 
-func (c *networkClient) GetCoupon(address string) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+func (c *NetworkClient) GetCoupon(address string) (types.ContractOutput, error) {
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -386,7 +386,7 @@ func (c *networkClient) GetCoupon(address string) (types.ContractOutput, error) 
 	return c.GetState(address, method, nil)
 }
 
-func (c *networkClient) ListCoupons(
+func (c *NetworkClient) ListCoupons(
 	owner string,
 	tokenAddress string,
 	programType string,
@@ -396,7 +396,7 @@ func (c *networkClient) ListCoupons(
 	ascending bool,
 ) (types.ContractOutput, error) {
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

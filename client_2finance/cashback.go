@@ -14,7 +14,7 @@ import (
 )
 
 // AddCashBack deploys a new cashback program (to = DEPLOY address).
-func (c *networkClient) AddCashback(
+func (c *NetworkClient) AddCashback(
 	address string,
 	owner string,
 	tokenAddress string,
@@ -25,7 +25,7 @@ func (c *networkClient) AddCashback(
 	paused bool,
 ) (types.ContractOutput, error) {
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -75,6 +75,7 @@ func (c *networkClient) AddCashback(
 		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
 	}
 
+
 	cashback, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
@@ -83,7 +84,7 @@ func (c *networkClient) AddCashback(
 }
 
 // UpdateCashback updates an existing cashback program (to = program address). OnlyOwner.
-func (c *networkClient) UpdateCashback(
+func (c *NetworkClient) UpdateCashback(
 	address string,
 	tokenAddress string,
 	programType string, // "fixed-percentage" | "variable-percentage"
@@ -110,7 +111,7 @@ func (c *networkClient) UpdateCashback(
 		return types.ContractOutput{}, fmt.Errorf("percentage not set")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -137,7 +138,7 @@ func (c *networkClient) UpdateCashback(
 }
 
 // PauseCashBack pauses a cashback program. OnlyOwner.
-func (c *networkClient) PauseCashback(address string, pause bool) (types.ContractOutput, error) {
+func (c *NetworkClient) PauseCashback(address string, pause bool) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -148,7 +149,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 		return types.ContractOutput{}, fmt.Errorf("pause must be true: Pause: %t", pause)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -171,7 +172,7 @@ func (c *networkClient) PauseCashback(address string, pause bool) (types.Contrac
 }
 
 // UnpauseCashback unpauses a cashback program. OnlyOwner.
-func (c *networkClient) UnpauseCashback(address string, pause bool) (types.ContractOutput, error) {
+func (c *NetworkClient) UnpauseCashback(address string, pause bool) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -182,7 +183,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 		return types.ContractOutput{}, fmt.Errorf("pause must be false: Pause: %t", pause)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -205,7 +206,7 @@ func (c *networkClient) UnpauseCashback(address string, pause bool) (types.Contr
 }
 
 // DepositCashBack funds the cashback pool (token inferred from state).
-func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
+func (c *NetworkClient) DepositCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -230,7 +231,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -260,7 +261,7 @@ func (c *networkClient) DepositCashbackFunds(address, tokenAddress, amount, toke
 }
 
 // WithdrawCashback withdraws funds from the cashback pool. OnlyOwner.
-func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
+func (c *NetworkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -286,7 +287,7 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -311,8 +312,8 @@ func (c *networkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tok
 }
 
 // GetCashBack reads a single cashback state.
-func (c *networkClient) GetCashback(address string) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+func (c *NetworkClient) GetCashback(address string) (types.ContractOutput, error) {
+	from := c.walletManager.OwnerAddress()
 
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("cashback address must be set")
@@ -330,7 +331,7 @@ func (c *networkClient) GetCashback(address string) (types.ContractOutput, error
 }
 
 // ListCashBack queries cashback programs with filters + pagination.
-func (c *networkClient) ListCashbacks(
+func (c *NetworkClient) ListCashbacks(
 	owner string,
 	tokenAddress string,
 	programType string,
@@ -339,7 +340,7 @@ func (c *networkClient) ListCashbacks(
 	limit int,
 	ascending bool,
 ) (types.ContractOutput, error) {
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
@@ -380,7 +381,7 @@ func (c *networkClient) ListCashbacks(
 	return c.GetState("", method, data)
 }
 
-func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (types.ContractOutput, error) {
+func (c *NetworkClient) ClaimCashback(address, amount, tokenType, uuid string) (types.ContractOutput, error) {
 	if address == "" {
 		return types.ContractOutput{}, fmt.Errorf("address not set")
 	}
@@ -399,7 +400,7 @@ func (c *networkClient) ClaimCashback(address, amount, tokenType, uuid string) (
 		}
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 
 	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
 		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)

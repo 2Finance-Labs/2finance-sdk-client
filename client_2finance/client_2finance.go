@@ -398,7 +398,7 @@ type Client2FinanceNetwork interface {
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
 }
 
-type networkClient struct {
+type NetworkClient struct {
 	mqttClient mqtt.IMQTT
 	replyTo    string
 	chainId    uint8
@@ -411,33 +411,33 @@ func New(broker, clientID string, debug bool, walletManager wallet_manager.IWall
 	mqttClient := mqtt.New(broker, clientID, debug)
 	mqttClient.Connect()
 	replyTo := uuid.NewString()
-	return &networkClient{
+	return &NetworkClient{
 		mqttClient: mqttClient,
 		replyTo:    replyTo,
 		walletManager: walletManager,
 	}
 }
 
-func (c *networkClient) SetChainID(chainId uint8) {
+func (c *NetworkClient) SetChainID(chainId uint8) {
 	if chainId < 1 || chainId > 2 {
 		log.Fatalf("invalid chainId: %d, available values are 2 testnet or 1 mainnet", chainId)
 	}
 	c.chainId = chainId
 }
 
-func (c *networkClient) SetWalletManager(wallet wallet_manager.IWalletManager) {
+func (c *NetworkClient) SetWalletManager(wallet wallet_manager.IWalletManager) {
 	if wallet == nil {
 		log.Fatalf("wallet manager cannot be nil")
 	}
 	c.walletManager = wallet
 }
 
-func (c *networkClient) GetChainID() uint8 {
+func (c *NetworkClient) GetChainID() uint8 {
 	return c.chainId
 }
 
 // SendRequest publishes the payload to the MQTT broker
-func (c *networkClient) sendRequest(topic string, payload interface{}) error {
+func (c *NetworkClient) sendRequest(topic string, payload interface{}) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal payload error: %w", err)
@@ -450,7 +450,7 @@ func (c *networkClient) sendRequest(topic string, payload interface{}) error {
 	return nil
 }
 
-func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[string]interface{}, version uint8,
+func (c *NetworkClient) ListTransactions(from, to, hash string, dataFilter map[string]interface{}, version uint8,
 	page, limit int,
 	ascending bool) ([]transaction.Transaction, error) {
 
@@ -498,7 +498,7 @@ func (c *networkClient) ListTransactions(from, to, hash string, dataFilter map[s
 	return transactions, nil
 }
 
-func (c *networkClient) ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
+func (c *NetworkClient) ListLogs(logType []string, logIndex uint, transactionHash string, event map[string]interface{}, contractAddress string,
 	page, limit int,
 	ascending bool) ([]blockchainLog.Log, error) {
 	if len(logType) == 0 && transactionHash == "" && contractAddress == "" {
@@ -529,7 +529,7 @@ func (c *networkClient) ListLogs(logType []string, logIndex uint, transactionHas
 	return logs, nil
 }
 
-func (c *networkClient) sendAndWaitResponse(method string, params interface{}, replyTo string) ([]byte, error) {
+func (c *NetworkClient) sendAndWaitResponse(method string, params interface{}, replyTo string) ([]byte, error) {
 	replyTopic := fmt.Sprintf("%s/%s", event.TRANSACTIONS_RESPONSE_TOPIC, replyTo)
 	responseChan := make(chan []byte, 1)
 	if err := c.receiveResponse(replyTopic, func(data []byte) {
@@ -559,13 +559,13 @@ func (c *networkClient) sendAndWaitResponse(method string, params interface{}, r
 }
 
 // ReceiveResponse subscribes to a topic and calls the handler with raw payload
-func (c *networkClient) receiveResponse(topic string, handler func([]byte)) error {
+func (c *NetworkClient) receiveResponse(topic string, handler func([]byte)) error {
 	return c.mqttClient.SubscribeWithHandler(topic, func(_ mqtt.Client, msg mqtt.Message) {
 		handler(msg.Payload())
 	})
 }
 
-func (c *networkClient) SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error) {
+func (c *NetworkClient) SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error) {
 
 	// Send the transaction to the network
 	bytes, err := c.sendAndWaitResponse(method, tx, replyTo)
@@ -592,8 +592,7 @@ func (c *networkClient) SendTransaction(method string, tx interface{}, replyTo s
 	return outputBytes, nil
 }
 
-// SendTransaction builds, signs, and sends a transaction to the blockchain.
-func (c *networkClient) SignAndSendTransaction(
+func (c *NetworkClient) SignAndSendTransaction(
 	chainId uint8,
 	from string,
 	to string,
@@ -610,15 +609,19 @@ func (c *networkClient) SignAndSendTransaction(
 		return types.ContractOutput{}, fmt.Errorf("wallet manager is required")
 	}
 
-	txSigned, err := c.walletManager.SignTransaction(
-		chainId,
-		from,
-		to,
-		method,
-		data,
-		version,
-		uuid7,
-	)
+	if !c.walletManager.IsUnlocked() {
+		return types.ContractOutput{}, fmt.Errorf("wallet is locked")
+	}
+
+	txSigned, err := c.walletManager.SignTransaction(wallet_manager.SignTransactionInput{
+		ChainID: chainId,
+		From:    from,
+		To:      to,
+		Method:  method,
+		Data:    data,
+		Version: version,
+		UUID7:   uuid7,
+	})
 	if err != nil {
 		return types.ContractOutput{}, fmt.Errorf("failed to sign transaction: %w", err)
 	}
@@ -640,7 +643,7 @@ func (c *networkClient) SignAndSendTransaction(
 	return contractOutput, nil
 }
 
-func (c *networkClient) GetState(
+func (c *NetworkClient) GetState(
 	to string,
 	method string,
 	data map[string]interface{},
@@ -671,7 +674,7 @@ func (c *networkClient) GetState(
 	return contractOutput, nil
 }
 
-func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string,
+func (c *NetworkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time, hash string, previousHash string,
 	transactionMerkleRoot string,
 	page, limit int,
 	ascending bool) ([]block.Block, error) {
@@ -700,12 +703,12 @@ func (c *networkClient) ListBlocks(blockNumber uint64, blockTimestamp time.Time,
 	return blocks, nil
 }
 
-func (c *networkClient) DeployContract1(contractVersion string) (types.ContractOutput, error) {
+func (c *NetworkClient) DeployContract1(contractVersion string) (types.ContractOutput, error) {
 	if c.walletManager == nil {
 		return types.ContractOutput{}, fmt.Errorf("wallet manager is required")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
@@ -748,12 +751,12 @@ func (c *networkClient) DeployContract1(contractVersion string) (types.ContractO
 	return contractOutput, nil
 }
 
-func (c *networkClient) DeployContract2(contractVersion, contractAddress string) (types.ContractOutput, error) {
+func (c *NetworkClient) DeployContract2(contractVersion, contractAddress string) (types.ContractOutput, error) {
 	if c.walletManager == nil {
 		return types.ContractOutput{}, fmt.Errorf("wallet manager is required")
 	}
 
-	from := c.walletManager.GetPublicKey()
+	from := c.walletManager.OwnerAddress()
 	if from == "" {
 		return types.ContractOutput{}, fmt.Errorf("from address is required")
 	}
