@@ -10,6 +10,8 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/transaction"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
+
+	"github.com/2Finance-Labs/go-client-2finance/protocol"
 )
 
 const (
@@ -47,7 +49,6 @@ type WalletManager struct {
 	lockTimer     *time.Timer
 }
 
-
 type SignTransactionInput struct {
 	ChainID uint8
 	From    string
@@ -70,6 +71,7 @@ type IWalletManager interface {
 	OwnerAddress() string
 
 	SignTransaction(input SignTransactionInput) (*transaction.Transaction, error)
+	SignPreparedTransaction(input protocol.PreparedTransaction) (protocol.SignedTransaction, error)
 }
 
 func NewWalletManager(filePath string) IWalletManager {
@@ -372,6 +374,24 @@ func (w *WalletManager) SignTransaction(input SignTransactionInput) (*transactio
 		input.UUID7,
 	)
 }
+
+func (w *WalletManager) SignPreparedTransaction(input protocol.PreparedTransaction) (protocol.SignedTransaction, error) {
+	signed, err := w.SignTransaction(SignTransactionInput{
+		ChainID: input.ChainID,
+		From:    input.From,
+		To:      input.To,
+		Method:  input.Method,
+		Data:    input.Data,
+		Version: input.Version,
+		UUID7:   input.UUID7,
+	})
+	if err != nil {
+		return protocol.SignedTransaction{}, err
+	}
+
+	return protocol.SignedTransactionFromNetwork(signed)
+}
+
 func GenerateEd25519KeyPairHex() (string, string, error) {
 	publicKey, privateKey, err := keys.GenerateEd25519KeyPair()
 	if err != nil {
@@ -444,8 +464,6 @@ func (w *WalletManager) lockMemoryLocked() {
 	w.privateKey = nil
 	w.unlockedUntil = time.Time{}
 }
-
-
 
 func (w *WalletManager) signTransactionWithPrivateKey(
 	privateKey []byte,

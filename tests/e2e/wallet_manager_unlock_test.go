@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/2Finance-Labs/go-client-2finance/protocol"
+	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	"gitlab.com/2finance/2finance-network/blockchain/utils"
-	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 )
-
 
 func TestWalletManager_UnlockDuration_Is15Seconds(t *testing.T) {
 	unlockDuration := 15 * time.Second // This should match the actual unlock duration in the WalletManager implementation
@@ -81,6 +81,41 @@ func TestWalletManager_SignTransaction_WorksAfterUnlockWithPassword(t *testing.T
 
 	if tx == nil {
 		t.Fatal("expected signed transaction")
+	}
+}
+
+func TestWalletManager_SignPreparedTransaction_WorksAfterUnlockWithPassword(t *testing.T) {
+	manager, publicKey := newImportedWalletForUnlockTest(t)
+
+	if err := manager.UnlockWithPassword(testWalletPassword); err != nil {
+		t.Fatalf("UnlockWithPassword error: %v", err)
+	}
+
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		t.Fatalf("NewUUID7 error: %v", err)
+	}
+
+	signed, err := manager.SignPreparedTransaction(protocol.PreparedTransaction{
+		ChainID: 1,
+		From:    publicKey,
+		To:      publicKey,
+		Method:  "start_Sending",
+		Data: map[string]interface{}{
+			"contract_version": "sendingLifecycleV1",
+			"request_id":       "send-001",
+		},
+		Version: 1,
+		UUID7:   uuid7,
+	})
+	if err != nil {
+		t.Fatalf("SignPreparedTransaction error: %v", err)
+	}
+	if signed.Hash == "" || signed.Signature == "" {
+		t.Fatalf("hash/signature should not be empty")
+	}
+	if signed.Data["contract_version"] != "sendingLifecycleV1" {
+		t.Fatalf("contract_version = %v, want sendingLifecycleV1", signed.Data["contract_version"])
 	}
 }
 

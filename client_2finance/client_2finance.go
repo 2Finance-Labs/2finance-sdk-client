@@ -9,6 +9,8 @@ import (
 	"gitlab.com/2finance/2finance-network/blockchain/block"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/contractV1"
 	inputsDropV1 "gitlab.com/2finance/2finance-network/blockchain/contract/dropV1/inputs"
+	inputsFXLifecycleV1 "gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV1/inputs"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV1"
 	inputsPaymentV1 "gitlab.com/2finance/2finance-network/blockchain/contract/paymentV1/inputs"
 	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
 	blockchainLog "gitlab.com/2finance/2finance-network/blockchain/log"
@@ -20,6 +22,7 @@ import (
 
 	"strings"
 
+	"github.com/2Finance-Labs/go-client-2finance/protocol"
 	"github.com/2Finance-Labs/go-client-2finance/wallet_manager"
 	"github.com/google/uuid"
 	"gitlab.com/2finance/2finance-network/infra/event"
@@ -32,6 +35,9 @@ type Client2FinanceNetwork interface {
 	SetWalletManager(wallet wallet_manager.IWalletManager)
 
 	SendTransaction(method string, tx interface{}, replyTo string) (outputBytes []byte, err error)
+	SignPreparedTransaction(tx protocol.PreparedTransaction) (protocol.SignedTransaction, error)
+	SubmitSignedTransaction(tx protocol.SignedTransaction) (types.ContractOutput, error)
+	SignAndSendPreparedTransaction(tx protocol.PreparedTransaction) (types.ContractOutput, error)
 
 	// CHAIN
 	ListTransactions(from, to, hash string, dataFilter map[string]interface{}, version uint8,
@@ -396,12 +402,38 @@ type Client2FinanceNetwork interface {
 	ListRaffles(owner, tokenAddress string, paused *bool, activeOnly *bool, page, limit int, asc bool) (types.ContractOutput, error)
 	GetPrize(address string, prizeUUID string) (types.ContractOutput, error)
 	ListPrizes(raffleAddress string, page, limit int, asc bool) (types.ContractOutput, error)
+
+	// LIFECYCLES
+	StartFX(in inputsFXLifecycleV1.InputStartFX) (types.ContractOutput, error)
+	AdvanceFX(in inputsFXLifecycleV1.InputAdvanceFX) (types.ContractOutput, error)
+	FailFX(in inputsFXLifecycleV1.InputFailFX) (types.ContractOutput, error)
+	GetFX(address, requestID string) (types.ContractOutput, error)
+
+	StartOnboarding(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
+	AdvanceOnboarding(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
+	FailOnboarding(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	GetOnboarding(address, requestID string) (types.ContractOutput, error)
+
+	StartReceiving(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
+	AdvanceReceiving(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
+	FailReceiving(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	GetReceiving(address, requestID string) (types.ContractOutput, error)
+
+	StartSending(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
+	AdvanceSending(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
+	FailSending(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	GetSending(address, requestID string) (types.ContractOutput, error)
+
+	StartMultiCurrency(in lifecycleCommonV1.StartInput) (types.ContractOutput, error)
+	AdvanceMultiCurrency(in lifecycleCommonV1.AdvanceInput) (types.ContractOutput, error)
+	FailMultiCurrency(in lifecycleCommonV1.FailInput) (types.ContractOutput, error)
+	GetMultiCurrency(address, requestID string) (types.ContractOutput, error)
 }
 
 type NetworkClient struct {
-	mqttClient mqtt.IMQTT
-	replyTo    string
-	chainId    uint8
+	mqttClient    mqtt.IMQTT
+	replyTo       string
+	chainId       uint8
 	walletManager wallet_manager.IWalletManager
 }
 
@@ -412,8 +444,8 @@ func New(broker, clientID string, debug bool, walletManager wallet_manager.IWall
 	mqttClient.Connect()
 	replyTo := uuid.NewString()
 	return &NetworkClient{
-		mqttClient: mqttClient,
-		replyTo:    replyTo,
+		mqttClient:    mqttClient,
+		replyTo:       replyTo,
 		walletManager: walletManager,
 	}
 }
