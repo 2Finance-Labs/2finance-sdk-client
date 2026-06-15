@@ -119,6 +119,36 @@ func TestWalletManager_SignPreparedTransaction_WorksAfterUnlockWithPassword(t *t
 	}
 }
 
+func TestWalletManager_SignTransaction_ReturnsErrorForEmptyData(t *testing.T) {
+	manager, publicKey := newImportedWalletForUnlockTest(t)
+
+	if err := manager.UnlockWithPassword(testWalletPassword); err != nil {
+		t.Fatalf("UnlockWithPassword error: %v", err)
+	}
+
+	_, err := manager.SignTransaction(wallet_manager.SignTransactionInput{
+		ChainID: 1,
+		From:    publicKey,
+		To:      publicKey,
+		Method:  "start_Sending",
+		Data:    map[string]interface{}{},
+		Version: 1,
+		UUID7:   "018f5f4e-8f6a-7c4a-9a2e-000000000003",
+	})
+	assertUnlockTestErrorContains(t, err, "data cannot be empty")
+
+	_, err = manager.SignPreparedTransaction(protocol.PreparedTransaction{
+		ChainID: 1,
+		From:    publicKey,
+		To:      publicKey,
+		Method:  "start_Sending",
+		Data:    map[string]interface{}{},
+		Version: 1,
+		UUID7:   "018f5f4e-8f6a-7c4a-9a2e-000000000004",
+	})
+	assertUnlockTestErrorContains(t, err, "data cannot be empty")
+}
+
 func TestWalletManager_SignTransaction_ReturnsWalletLocked_AfterManualLock(t *testing.T) {
 	manager, publicKey := newImportedWalletForUnlockTest(t)
 

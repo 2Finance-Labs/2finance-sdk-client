@@ -350,6 +350,9 @@ func (w *WalletManager) SignTransaction(input SignTransactionInput) (*transactio
 	if input.Method == "" {
 		return nil, errors.New("method is required")
 	}
+	if len(input.Data) == 0 {
+		return nil, errors.New("data cannot be empty")
+	}
 
 	w.mu.RLock()
 
