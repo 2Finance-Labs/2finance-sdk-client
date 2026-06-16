@@ -1,0 +1,31 @@
+name: fast-feedback
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  fast-feedback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Format check
+        run: test -z "$(gofmt -l protocol tests/harness)"
+
+      - name: Vet
+        run: go vet ./client_2finance ./protocol ./wallet_manager ./tests/harness
+
+      - name: Fast tests
+        run: go test ./protocol ./wallet_manager ./tests/harness -v

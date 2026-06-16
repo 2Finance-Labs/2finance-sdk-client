@@ -1,0 +1,63 @@
+id: mcp.finance-tools.registration-contract
+title: MCP exposes finance lifecycle tools required by the client
+kind: contract
+owner: mcp
+systems:
+  - mcp-2finance
+  - go-client-2finance
+goal: >
+  Keep the MCP tool registry compatible with the client e2e harness and the
+  lifecycle specs that depend on prepared transaction tools.
+actors:
+  - name: mcp_server
+    role: publishes names and JSON schemas through tools/list
+  - name: client_harness
+    role: calls tools/call using stable tool names
+fixtures:
+  required_tools:
+    - finance.contract.deploy.prepare
+    - finance.send.start.prepare
+    - finance.lifecycle.next.prepare
+    - finance.transaction.submit_signed
+    - finance.send.get
+    - finance_assistant.conversation.plan
+    - finance_communicator.template.get
+    - walletAgent.create
+steps:
+  - id: list-tools
+    via: mcp_http
+    tool: tools/list
+    action: list_registered_tools
+    expect:
+      finance.contract.deploy.prepare: present
+      finance.send.start.prepare: present
+      finance.transaction.submit_signed: present
+      finance.send.get: present
+  - id: prepare-contract-deploy
+    via: mcp_http
+    tool: finance.contract.deploy.prepare
+    action: call_tool_with_minimal_valid_arguments
+    expect:
+      structured_content.workflow: contract.deploy.sendingLifecycleV1
+      structured_content.unsigned_transaction.method: deploy_contract2
+      structured_content.unsigned_transaction.hash: ""
+      structured_content.unsigned_transaction.signature: ""
+  - id: prepare-send-start
+    via: mcp_http
+    tool: finance.send.start.prepare
+    action: call_tool_with_minimal_valid_arguments
+    expect:
+      structured_content.workflow: send.start
+      structured_content.unsigned_transaction.method: start_Sending
+      structured_content.unsigned_transaction.hash: ""
+      structured_content.unsigned_transaction.signature: ""
+assertions:
+  - id: tools-are-stable
+    subject: mcp_tools_list
+    must:
+      required_tools: present
+  - id: mcp-prepares-only
+    subject: mcp_prepared_transaction
+    must:
+      hash: empty
+      signature: empty

@@ -1,0 +1,58 @@
+id: protocol.prepared-transaction.signing-contract
+title: Prepared transactions are unsigned until the wallet signs them
+kind: contract
+owner: protocol
+systems:
+  - protocol
+  - wallet_manager
+goal: >
+  Keep the MCP/client boundary explicit: MCP and clients may prepare a
+  transaction, but only a wallet or approved signer fills hash and signature.
+actors:
+  - name: mcp_or_client
+    role: prepares an unsigned transaction envelope
+  - name: wallet
+    role: signs the prepared transaction with the user's key
+fixtures:
+  prepared_transaction:
+    chain_id: 1
+    from: owner-public-key
+    to: sending-lifecycle-contract
+    method: start_Sending
+    data:
+      contract_version: sendingLifecycleV1
+      request_id: request-001
+      provider: wise
+      currency: USD
+      amount: "25.50"
+    version: 1
+    uuid7: 019ec268-ce77-7b4f-89f0-4c7aab895984
+    hash: ""
+    signature: ""
+steps:
+  - id: prepare
+    via: protocol
+    action: build_prepared_transaction
+    expect:
+      hash: ""
+      signature: ""
+      data.contract_version: sendingLifecycleV1
+  - id: sign
+    via: wallet_manager
+    action: sign_prepared_transaction
+    expect:
+      hash: non_empty
+      signature: non_empty
+      method: start_Sending
+assertions:
+  - id: unsigned-boundary
+    subject: prepared_transaction
+    must:
+      hash: empty
+      signature: empty
+  - id: signed-boundary
+    subject: signed_transaction
+    must:
+      hash: non_empty
+      signature: non_empty
+      method: start_Sending

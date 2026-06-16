@@ -1,0 +1,60 @@
+id: protocol.signed-transaction.network-roundtrip
+title: Signed transactions preserve network transaction fields through conversion
+kind: contract
+owner: protocol
+systems:
+  - protocol
+  - 2finance-network
+goal: >
+  Keep the Go client protocol envelope compatible with the network transaction
+  type when a transaction crosses package boundaries.
+actors:
+  - name: client_protocol
+    role: converts signed transaction envelopes
+  - name: network_transaction
+    role: stores canonical blockchain transaction fields
+fixtures:
+  signed_transaction:
+    chain_id: 1
+    from: owner-public-key
+    to: contract-address
+    method: start_Sending
+    data:
+      contract_version: sendingLifecycleV1
+      request_id: request-001
+    version: 1
+    uuid7: 019ec268-ce77-7b4f-89f0-4c7aab895984
+    hash: signed-hash
+    signature: signed-signature
+steps:
+  - id: to-network
+    via: protocol
+    action: signed_transaction_to_network_transaction
+    expect:
+      chain_id: 1
+      method: start_Sending
+      data.contract_version: sendingLifecycleV1
+      hash: signed-hash
+      signature: signed-signature
+  - id: from-network
+    via: protocol
+    action: signed_transaction_from_network_transaction
+    expect:
+      chain_id: 1
+      method: start_Sending
+      data.request_id: request-001
+      hash: signed-hash
+      signature: signed-signature
+assertions:
+  - id: no-field-loss
+    subject: signed_transaction
+    must:
+      chain_id: preserved
+      from: preserved
+      to: preserved
+      method: preserved
+      data: preserved
+      version: preserved
+      uuid7: preserved
+      hash: preserved
+      signature: preserved

@@ -10,8 +10,9 @@ require (
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
-	gitlab.com/2finance/2finance-network v0.0.0-20260430205123-057d5fe53e4c
+	gitlab.com/2finance/2finance-network v0.0.0-20260615180724-4de31dbde374
 	golang.org/x/crypto v0.50.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -62,7 +63,6 @@ require (
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/gorm v1.30.0 // indirect
 	stathat.com/c/consistent v1.0.0 // indirect

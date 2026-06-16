@@ -1,0 +1,70 @@
+id: wallet-manager.unlock-and-sign-prepared-transaction
+title: Wallet manager must be unlocked before signing prepared transactions
+kind: integration
+owner: wallet_manager
+systems:
+  - wallet_manager
+  - protocol
+goal: >
+  Protect user keys while allowing prepared transactions from MCP or the client
+  to be signed only after explicit wallet unlock.
+actors:
+  - name: wallet_owner
+    role: controls the password and signing authority
+  - name: wallet_manager
+    role: keeps private key encrypted except during the unlock window
+fixtures:
+  password: test-password
+  prepared_transaction:
+    chain_id: 1
+    from: owner-public-key
+    to: contract-address
+    method: start_Sending
+    data:
+      contract_version: sendingLifecycleV1
+      request_id: request-001
+    version: 1
+    uuid7: 019ec268-ce77-7b4f-89f0-4c7aab895984
+steps:
+  - id: import-private-key
+    via: wallet_manager
+    action: import_private_key_with_password
+    expect:
+      wallet_file: encrypted
+      private_key_memory: locked
+  - id: sign-while-locked
+    via: wallet_manager
+    action: sign_prepared_transaction
+    expect:
+      error: wallet_locked
+  - id: unlock
+    via: wallet_manager
+    action: unlock_with_password
+    expect:
+      unlocked: true
+  - id: sign-while-unlocked
+    via: wallet_manager
+    action: sign_prepared_transaction
+    expect:
+      signed_transaction.hash: non_empty
+      signed_transaction.signature: non_empty
+  - id: lock
+    via: wallet_manager
+    action: lock
+    expect:
+      unlocked: false
+assertions:
+  - id: private-key-stays-local
+    subject: wallet_manager
+    must:
+      private_key_exported: never
+      signing_authority: local_wallet_only
+  - id: locked-wallet-cannot-sign
+    subject: wallet_manager
+    must:
+      locked_signing_result: error
+  - id: unlocked-wallet-signs
+    subject: signed_transaction
+    must:
+      hash: non_empty
+      signature: non_empty
