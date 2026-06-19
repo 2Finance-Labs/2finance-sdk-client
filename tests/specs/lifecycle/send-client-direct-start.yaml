@@ -22,14 +22,17 @@ actors:
   - name: network_vm
     role: persists logs and lifecycle state
 fixtures:
-  provider: wise
+  provider: codexa
   provider_account_id: account-1
   external_auth_id: auth-1
   profile_id: profile-1
-  external_quote_id: quote-1
-  external_beneficiary_id: beneficiary-1
+  source_currency: BRL
+  target_currency: USD
+  beneficiary_name: John Smith
+  beneficiary_type: individual
+  beneficiary_country: US
   currency: USD
-  amount: "25.50"
+  amount: "1000.00"
 steps:
   - id: deploy-contract
     via: client_2finance
@@ -54,6 +57,7 @@ assertions:
     subject: network_log
     must:
       log_type: SendingLifecycle_Started
+      first_step: quote
   - id: state-readable
     subject: lifecycle_state
     must:
