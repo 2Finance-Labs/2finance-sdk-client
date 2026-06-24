@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	clientauth "github.com/2Finance-Labs/go-client-2finance/auth"
 	"github.com/2Finance-Labs/go-client-2finance/protocol"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/fxLifecycleV1"
 	"gitlab.com/2finance/2finance-network/blockchain/contract/lifecycleCommonV1"
@@ -358,7 +359,14 @@ type e2eMCPClient struct {
 }
 
 func newE2EMCPClient(url string) *e2eMCPClient {
-	return &e2eMCPClient{url: url, http: &http.Client{Timeout: 15 * time.Second}}
+	httpClient := &http.Client{Timeout: 15 * time.Second}
+	if token := os.Getenv("MCP_ACCESS_TOKEN"); token != "" {
+		httpClient.Transport = clientauth.AuthTransport{
+			Source: clientauth.StaticTokenSource(token),
+			Base:   http.DefaultTransport,
+		}
+	}
+	return &e2eMCPClient{url: url, http: httpClient}
 }
 
 func (c *e2eMCPClient) callTool(ctx context.Context, name string, args map[string]any) (json.RawMessage, error) {
