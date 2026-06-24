@@ -3,3 +3,8 @@
 
 # Ignore E2E generated wallet files
 /tests/e2e/wallets/*
+
+# Generated test/runtime artifacts
+.test-results/
+__pycache__/
+*.pyc
