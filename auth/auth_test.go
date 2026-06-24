@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -45,6 +46,28 @@ func TestAuthTransportAddsBearerToken(t *testing.T) {
 	}
 }
 
+func TestAuthTransportDoesNotDuplicateBearerPrefix(t *testing.T) {
+	base := &captureTransport{}
+	transport := AuthTransport{
+		Source: StaticTokenSource("Bearer access-token"),
+		Base:   base,
+	}
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://example.test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := transport.RoundTrip(req)
+	if err != nil {
+		t.Fatalf("RoundTrip error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if got := base.header.Get("Authorization"); got != "Bearer access-token" {
+		t.Fatalf("Authorization = %q, want normalized bearer token", got)
+	}
+}
+
 func TestRedactAuthorizationMasksAuthorizationHeader(t *testing.T) {
 	headers := http.Header{}
 	headers.Set("Authorization", "Bearer secret")
@@ -60,5 +83,14 @@ func TestRedactAuthorizationMasksAuthorizationHeader(t *testing.T) {
 	}
 	if got := headers.Get("Authorization"); got != "Bearer secret" {
 		t.Fatalf("original Authorization = %q, want unchanged", got)
+	}
+}
+
+func TestRedactSensitiveMasksOAuthValues(t *testing.T) {
+	redacted := RedactSensitive(`Bearer abc.def client_secret="secret" refresh_token=refresh code=abc`)
+	for _, forbidden := range []string{"abc.def", `"secret"`, "=refresh", "code=abc"} {
+		if strings.Contains(redacted, forbidden) {
+			t.Fatalf("redacted value leaked %q: %s", forbidden, redacted)
+		}
 	}
 }

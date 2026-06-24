@@ -258,7 +258,7 @@ func TestSendingLifecycle_MCPPrepareSignSubmitGet(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	mcpClient := newE2EMCPClient(mcpURL)
+	mcpClient := newE2EMCPClient(t, mcpURL)
 	if _, err := mcpClient.call(ctx, "initialize", map[string]any{"protocolVersion": "2025-06-18"}); err != nil {
 		t.Fatalf("mcp initialize: %v", err)
 	}
@@ -358,15 +358,78 @@ type e2eMCPClient struct {
 	nextID    int
 }
 
-func newE2EMCPClient(url string) *e2eMCPClient {
+func newE2EMCPClient(t testing.TB, url string) *e2eMCPClient {
+	t.Helper()
+
 	httpClient := &http.Client{Timeout: 15 * time.Second}
-	if token := os.Getenv("MCP_ACCESS_TOKEN"); token != "" {
+	tokenSource, err := mcpE2ETokenSource()
+	if err != nil {
+		t.Fatalf("MCP auth config: %v", err)
+	}
+	if tokenSource != nil {
 		httpClient.Transport = clientauth.AuthTransport{
-			Source: clientauth.StaticTokenSource(token),
+			Source: tokenSource,
 			Base:   http.DefaultTransport,
 		}
 	}
 	return &e2eMCPClient{url: url, http: httpClient}
+}
+
+func mcpE2ETokenSource() (clientauth.TokenSource, error) {
+	if token := os.Getenv("MCP_ACCESS_TOKEN"); strings.TrimSpace(token) != "" {
+		return clientauth.StaticTokenSource(token), nil
+	}
+
+	tokenURL := firstNonEmptyEnv("MCP_OIDC_TOKEN_URL", "AUTH_E2E_TOKEN_URL", "TWO_FINANCE_OIDC_TOKEN_URL")
+	clientID := firstNonEmptyEnv("MCP_OIDC_CLIENT_ID", "AUTH_E2E_CLIENT_ID", "TWO_FINANCE_OIDC_CLIENT_ID")
+	clientSecret := firstNonEmptyEnv("MCP_OIDC_CLIENT_SECRET", "AUTH_E2E_CLIENT_SECRET", "TWO_FINANCE_OIDC_CLIENT_SECRET")
+	if tokenURL == "" && clientID == "" && clientSecret == "" {
+		return nil, nil
+	}
+	if tokenURL == "" || clientID == "" || clientSecret == "" {
+		return nil, fmt.Errorf("set MCP_ACCESS_TOKEN or provide MCP_OIDC_TOKEN_URL/MCP_OIDC_CLIENT_ID/MCP_OIDC_CLIENT_SECRET")
+	}
+
+	return clientauth.NewClientCredentialsTokenSource(clientauth.ClientCredentialsConfig{
+		TokenURL:     tokenURL,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Scopes:       strings.Fields(firstNonEmptyEnv("MCP_OIDC_SCOPES", "AUTH_E2E_SCOPE", "TWO_FINANCE_OIDC_SCOPES")),
+	})
+}
+
+func firstNonEmptyEnv(keys ...string) string {
+	for _, key := range keys {
+		if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func TestMCPRedactedErrorBodyMasksOAuthValues(t *testing.T) {
+	redacted := mcpRedactedErrorBody([]byte(`{"error":"Bearer token-123 client_secret=s3cr3t-value access_token=token-456"}`))
+	for _, forbidden := range []string{"token-123", "s3cr3t-value", "token-456"} {
+		if strings.Contains(redacted, forbidden) {
+			t.Fatalf("redacted MCP error leaked %q: %s", forbidden, redacted)
+		}
+	}
+}
+
+func TestNewE2EMCPClientUsesClientCredentialsEnv(t *testing.T) {
+	t.Setenv("MCP_OIDC_TOKEN_URL", "http://127.0.0.1:8080/realms/2Finance/protocol/openid-connect/token")
+	t.Setenv("MCP_OIDC_CLIENT_ID", "2finance-mcp")
+	t.Setenv("MCP_OIDC_CLIENT_SECRET", "local-secret")
+	t.Setenv("MCP_OIDC_SCOPES", "mcp:invoke finance:prepare")
+
+	client := newE2EMCPClient(t, "http://127.0.0.1:8089/mcp")
+	transport, ok := client.http.Transport.(clientauth.AuthTransport)
+	if !ok {
+		t.Fatalf("transport = %T, want auth.AuthTransport", client.http.Transport)
+	}
+	if transport.Source == nil {
+		t.Fatal("expected client credentials token source")
+	}
 }
 
 func (c *e2eMCPClient) callTool(ctx context.Context, name string, args map[string]any) (json.RawMessage, error) {
@@ -407,7 +470,7 @@ func (c *e2eMCPClient) call(ctx context.Context, method string, params any) (jso
 		c.sessionID = sessionID
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("mcp HTTP %d: %s", resp.StatusCode, string(raw))
+		return nil, fmt.Errorf("mcp HTTP %d: %s", resp.StatusCode, mcpRedactedErrorBody(raw))
 	}
 
 	var decoded struct {
@@ -418,12 +481,16 @@ func (c *e2eMCPClient) call(ctx context.Context, method string, params any) (jso
 		} `json:"error"`
 	}
 	if err := json.Unmarshal(raw, &decoded); err != nil {
-		return nil, fmt.Errorf("decode MCP response: %w; raw=%s", err, string(raw))
+		return nil, fmt.Errorf("decode MCP response: %w; raw=%s", err, mcpRedactedErrorBody(raw))
 	}
 	if decoded.Error != nil {
-		return nil, fmt.Errorf("mcp jsonrpc error %d: %s", decoded.Error.Code, decoded.Error.Message)
+		return nil, fmt.Errorf("mcp jsonrpc error %d: %s", decoded.Error.Code, clientauth.RedactSensitive(decoded.Error.Message))
 	}
 	return decoded.Result, nil
+}
+
+func mcpRedactedErrorBody(raw []byte) string {
+	return clientauth.RedactSensitive(string(raw))
 }
 
 func mcpCallPreparedTransaction(t *testing.T, ctx context.Context, client *e2eMCPClient, tool string, args map[string]any) protocol.PreparedTransactionResult {
