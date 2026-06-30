@@ -16,3 +16,8 @@ dist/
 target/
 .gradle/
 cmake-build-*/
+/tests/e2e/wallets/*
+/go/tests/e2e/wallets/*
+
+# Ignore generated test output
+.test-results/
