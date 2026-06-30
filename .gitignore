@@ -2,6 +2,7 @@
 .env
 
 # Ignore E2E generated wallet files
+/tests/e2e/wallets/*
 /go/tests/e2e/wallets/*
 
 # Generated test/runtime artifacts
@@ -16,8 +17,3 @@ dist/
 target/
 .gradle/
 cmake-build-*/
-/tests/e2e/wallets/*
-/go/tests/e2e/wallets/*
-
-# Ignore generated test output
-.test-results/
