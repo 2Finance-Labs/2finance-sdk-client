@@ -1,0 +1,534 @@
+{
+  "schema": "sdk.domain_operations.v1",
+  "domains": [
+    {
+      "name": "auth",
+      "env": "TWO_FINANCE_AUTH_URL",
+      "transport": "http",
+      "description": "User auth and client credentials token flows.",
+      "operations": [
+        {
+          "name": "login",
+          "method": "POST",
+          "path": "/v1/2finance-authenticator/{realm}/{client_id}/login",
+          "path_params": ["realm", "client_id"],
+          "request_schema": "auth.login.request.v1",
+          "response_schema": "auth.token.response.v1"
+        },
+        {
+          "name": "client_credentials",
+          "method": "POST",
+          "path": "/token",
+          "request_schema": "auth.client_credentials.request.v1",
+          "response_schema": "auth.token.response.v1"
+        },
+        {
+          "name": "jwks",
+          "method": "GET",
+          "path": "/realms/{realm}/protocol/openid-connect/certs",
+          "path_params": ["realm"],
+          "response_schema": "auth.jwks.response.v1"
+        },
+        {
+          "name": "validate_token",
+          "method": "POST",
+          "path": "/realms/{realm}/protocol/openid-connect/token/introspect",
+          "path_params": ["realm"],
+          "request_schema": "auth.token_introspection.request.v1",
+          "response_schema": "auth.token_introspection.response.v1"
+        }
+      ]
+    },
+    {
+      "name": "network",
+      "env": "TWO_FINANCE_NETWORK_URL",
+      "transport": "http",
+      "description": "Blockchain/network HTTP APIs and market data helpers.",
+      "operations": [
+        {
+          "name": "virtual_machine",
+          "method": "GET",
+          "path": "/v1/2finance-network/virtual-machine"
+        },
+        {
+          "name": "market_candles",
+          "method": "GET",
+          "path": "/v1/2finance-network/markets/{market}/candles",
+          "path_params": ["market"],
+          "query": ["symbol", "interval", "from", "to", "limit"]
+        },
+        {
+          "name": "bonds",
+          "method": "GET",
+          "path": "/v1/2finance-network/products/bonds"
+        },
+        {
+          "name": "create_bond",
+          "method": "POST",
+          "path": "/v1/2finance-network/products/bonds",
+          "request_schema": "network.bond.create.request.v1"
+        },
+        {
+          "name": "loans",
+          "method": "GET",
+          "path": "/v1/2finance-network/products/loans"
+        },
+        {
+          "name": "create_loan",
+          "method": "POST",
+          "path": "/v1/2finance-network/products/loans",
+          "request_schema": "network.loan.create.request.v1"
+        },
+        {
+          "name": "swaps",
+          "method": "GET",
+          "path": "/v1/2finance-network/products/swaps"
+        },
+        {
+          "name": "create_swap",
+          "method": "POST",
+          "path": "/v1/2finance-network/products/swaps",
+          "request_schema": "network.swap.create.request.v1"
+        },
+        {
+          "name": "staking_products",
+          "method": "GET",
+          "path": "/v1/2finance-network/products/staking"
+        },
+        {
+          "name": "create_staking_product",
+          "method": "POST",
+          "path": "/v1/2finance-network/products/staking",
+          "request_schema": "network.staking.create.request.v1"
+        },
+        {
+          "name": "synthetic_assets",
+          "method": "GET",
+          "path": "/v1/2finance-network/products/synthetic-assets"
+        },
+        {
+          "name": "create_synthetic_asset",
+          "method": "POST",
+          "path": "/v1/2finance-network/products/synthetic-assets",
+          "request_schema": "network.synthetic_asset.create.request.v1"
+        },
+        {
+          "name": "liquidity_pools",
+          "method": "GET",
+          "path": "/v1/2finance-network/products/liquidity-pools"
+        },
+        {
+          "name": "create_liquidity_pool",
+          "method": "POST",
+          "path": "/v1/2finance-network/products/liquidity-pools",
+          "request_schema": "network.liquidity_pool.create.request.v1"
+        }
+      ]
+    },
+    {
+      "name": "analytics",
+      "env": "TWO_FINANCE_ANALYTICS_URL",
+      "transport": "http",
+      "description": "Analytics tool APIs for technical analysis, optimization, balances, risk and staking.",
+      "operations": [
+        {
+          "name": "indicators",
+          "method": "GET",
+          "path": "/analytics/indicators",
+          "response_schema": "analytics.indicators.response.v1"
+        },
+        {
+          "name": "technical_analysis",
+          "method": "POST",
+          "path": "/analytics/technical-analysis:calculate",
+          "request_schema": "analytics.technical_analysis.request.v1"
+        },
+        {
+          "name": "upsert_candles",
+          "method": "POST",
+          "path": "/analytics/candles:upsert",
+          "request_schema": "analytics.candles_upsert.request.v1"
+        },
+        {
+          "name": "portfolio_optimizer",
+          "method": "POST",
+          "path": "/portfolio-manager/optimizer",
+          "request_schema": "analytics.portfolio_optimizer.request.v1"
+        },
+        {
+          "name": "rankings",
+          "method": "GET",
+          "path": "/portfolio-manager/rankings"
+        },
+        {
+          "name": "balances",
+          "method": "GET",
+          "path": "/portfolio-manager/balances/{account_id}",
+          "path_params": ["account_id"]
+        },
+        {
+          "name": "black_scholes",
+          "method": "GET",
+          "path": "/risk-manager/blackscholes",
+          "query": ["symbol", "strike", "maturity", "volatility"]
+        },
+        {
+          "name": "staking",
+          "method": "GET",
+          "path": "/staking"
+        }
+      ]
+    },
+    {
+      "name": "orchestrator",
+      "env": "TWO_FINANCE_ORCHESTRATOR_URL",
+      "transport": "http",
+      "description": "MCP host orchestration APIs for sessions, messages, tools, prompts, resources and observability.",
+      "operations": [
+        {
+          "name": "create_session",
+          "method": "POST",
+          "path": "/v1/mcphost/sessions",
+          "request_schema": "orchestrator.session.create.request.v1"
+        },
+        {
+          "name": "send_message",
+          "method": "POST",
+          "path": "/v1/mcphost/messages",
+          "request_schema": "orchestrator.message.send.request.v1"
+        },
+        {
+          "name": "list_tools",
+          "method": "GET",
+          "path": "/v1/mcphost/tools"
+        },
+        {
+          "name": "list_prompts",
+          "method": "GET",
+          "path": "/v1/mcphost/prompts"
+        },
+        {
+          "name": "list_resources",
+          "method": "GET",
+          "path": "/v1/mcphost/resources"
+        },
+        {
+          "name": "providers",
+          "method": "GET",
+          "path": "/v1/mcphost/providers"
+        },
+        {
+          "name": "approvals",
+          "method": "GET",
+          "path": "/v1/mcphost/approvals"
+        },
+        {
+          "name": "observability",
+          "method": "GET",
+          "path": "/v1/mcphost/observability"
+        },
+        {
+          "name": "delete_session",
+          "method": "DELETE",
+          "path": "/v1/mcphost/sessions/{session_id}",
+          "path_params": ["session_id"]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "env": "TWO_FINANCE_MCP_URL",
+      "transport": "jsonrpc",
+      "description": "Direct MCP endpoint via /mcp.",
+      "operations": [
+        {
+          "name": "tools_list",
+          "method": "POST",
+          "path": "/mcp",
+          "request_schema": "mcp.tools_list.request.v1"
+        },
+        {
+          "name": "tools_call",
+          "method": "POST",
+          "path": "/mcp",
+          "request_schema": "mcp.tools_call.request.v1"
+        },
+        {
+          "name": "conversation_plan",
+          "method": "POST",
+          "path": "/mcp",
+          "request_schema": "mcp.finance_assistant.conversation_plan.request.v1",
+          "notes": "Calls tools/call with name finance_assistant.conversation.plan."
+        }
+      ]
+    },
+    {
+      "name": "planner",
+      "env": "TWO_FINANCE_MCP_URL",
+      "transport": "jsonrpc",
+      "description": "High-level SDK layer over MCP/orchestrator plus analytics and trading control.",
+      "operations": [
+        {
+          "name": "conversation_plan",
+          "method": "POST",
+          "path": "/mcp",
+          "request_schema": "planner.conversation_plan.request.v1"
+        },
+        {
+          "name": "operational_plan",
+          "method": "POST",
+          "path": "/mcp",
+          "request_schema": "planner.operational_plan.request.v1"
+        },
+        {
+          "name": "trading_plan",
+          "method": "POST",
+          "path": "/mcp",
+          "request_schema": "planner.trading_plan.request.v1",
+          "notes": "May enrich context from analytics and tradingcontrol before calling finance_assistant.conversation.plan."
+        }
+      ]
+    },
+    {
+      "name": "tradingcontrol",
+      "env": "TWO_FINANCE_TRADING_CONTROL_URL",
+      "transport": "http",
+      "description": "Trading control plane APIs for robots, strategies, directives, risk and audit.",
+      "operations": [
+        {
+          "name": "robots",
+          "method": "GET",
+          "path": "/robots"
+        },
+        {
+          "name": "create_robot",
+          "method": "POST",
+          "path": "/robots",
+          "request_schema": "tradingcontrol.robot.create.request.v1"
+        },
+        {
+          "name": "start_robot",
+          "method": "POST",
+          "path": "/robots/{robot_id}:start",
+          "path_params": ["robot_id"]
+        },
+        {
+          "name": "pause_robot",
+          "method": "POST",
+          "path": "/robots/{robot_id}:pause",
+          "path_params": ["robot_id"]
+        },
+        {
+          "name": "risk_policy",
+          "method": "GET",
+          "path": "/robots/{robot_id}/risk-policy",
+          "path_params": ["robot_id"]
+        },
+        {
+          "name": "risk_view",
+          "method": "GET",
+          "path": "/risk-view/{robot_id}",
+          "path_params": ["robot_id"]
+        },
+        {
+          "name": "strategies",
+          "method": "GET",
+          "path": "/strategies"
+        },
+        {
+          "name": "create_strategy",
+          "method": "POST",
+          "path": "/strategies",
+          "request_schema": "tradingcontrol.strategy.create.request.v1"
+        },
+        {
+          "name": "directives",
+          "method": "GET",
+          "path": "/directives"
+        },
+        {
+          "name": "create_directive",
+          "method": "POST",
+          "path": "/directives",
+          "request_schema": "tradingcontrol.directive.create.request.v1"
+        },
+        {
+          "name": "audit",
+          "method": "GET",
+          "path": "/audit"
+        },
+        {
+          "name": "activity",
+          "method": "GET",
+          "path": "/activity"
+        },
+        {
+          "name": "mcp_tools",
+          "method": "GET",
+          "path": "/mcp/tools"
+        }
+      ]
+    },
+    {
+      "name": "matchengine",
+      "env": "TWO_FINANCE_MATCHENGINE_WS_URL",
+      "transport": "websocket",
+      "description": "Direct execution and market data subscriptions.",
+      "operations": [
+        {
+          "name": "order_command",
+          "method": "WS",
+          "path": "/ws/order-entry",
+          "request_schema": "matchengine.order_command.v1",
+          "response_schema": "matchengine.execution_report.v1"
+        },
+        {
+          "name": "market_data_subscribe",
+          "method": "WS",
+          "path": "/ws/market-data",
+          "request_schema": "matchengine.market_data_subscribe.request.v1"
+        },
+        {
+          "name": "submit_order",
+          "method": "WS",
+          "path": "/ws/order-entry",
+          "request_schema": "matchengine.order_command.v1",
+          "response_schema": "matchengine.execution_report.v1",
+          "notes": "SDK helper sends an order_command payload through an injected or native WebSocket transport."
+        },
+        {
+          "name": "subscribe_market_data",
+          "method": "WS",
+          "path": "/ws/market-data",
+          "request_schema": "matchengine.market_data_subscribe.request.v1",
+          "notes": "SDK helper sends a market_data_subscribe payload through an injected or native WebSocket transport."
+        }
+      ]
+    },
+    {
+      "name": "hummingbot",
+      "env": "TWO_FINANCE_HUMMINGBOT_URL",
+      "transport": "http",
+      "description": "Connector helpers and state/provisioning APIs.",
+      "operations": [
+        {
+          "name": "balances",
+          "method": "GET",
+          "path": "/api/v1/balances"
+        },
+        {
+          "name": "connector_config",
+          "method": "POST",
+          "path": "/api/v1/connectors/2finance/config",
+          "request_schema": "hummingbot.connector_config.request.v1"
+        }
+      ]
+    },
+    {
+      "name": "keystore",
+      "env": "TWO_FINANCE_KEYSTORE_URL",
+      "transport": "http",
+      "description": "TSS keygen, signing, resharing and health APIs.",
+      "operations": [
+        {
+          "name": "health",
+          "method": "GET",
+          "path": "/healthz"
+        },
+        {
+          "name": "readiness",
+          "method": "GET",
+          "path": "/readyz"
+        },
+        {
+          "name": "start_keygen",
+          "method": "POST",
+          "path": "/keystore/keygen/start",
+          "request_schema": "keystore.keygen.start.request.v1"
+        },
+        {
+          "name": "start_signing",
+          "method": "POST",
+          "path": "/keystore/signing/start",
+          "request_schema": "keystore.signing.start.request.v1"
+        },
+        {
+          "name": "keys",
+          "method": "GET",
+          "path": "/keystore/keys/{user_public_key}",
+          "path_params": ["user_public_key"]
+        },
+        {
+          "name": "signatures",
+          "method": "GET",
+          "path": "/keystore/signatures/{user_public_key}",
+          "path_params": ["user_public_key"]
+        },
+        {
+          "name": "metrics",
+          "method": "GET",
+          "path": "/keystore/tss/metrics"
+        }
+      ]
+    },
+    {
+      "name": "providers",
+      "env": "TWO_FINANCE_WISE_URL",
+      "transport": "http",
+      "description": "Payment provider SDK adapters.",
+      "operations": [
+        {
+          "name": "wise_profiles",
+          "method": "GET",
+          "path": "/v1/profiles"
+        },
+        {
+          "name": "wise_profile",
+          "method": "GET",
+          "path": "/v1/profiles/{profile_id}",
+          "path_params": ["profile_id"]
+        },
+        {
+          "name": "wise_create_quote",
+          "method": "POST",
+          "path": "/v3/profiles/{profile_id}/quotes",
+          "path_params": ["profile_id"],
+          "request_schema": "providers.wise.quote.request.v1"
+        },
+        {
+          "name": "wise_create_transfer",
+          "method": "POST",
+          "path": "/v1/transfers",
+          "request_schema": "providers.wise.transfer.request.v1"
+        },
+        {
+          "name": "airwallex_accounts",
+          "method": "GET",
+          "path": "/api/v1/accounts"
+        },
+        {
+          "name": "airwallex_payments",
+          "method": "GET",
+          "path": "/api/v1/payments"
+        },
+        {
+          "name": "airwallex_create_payment",
+          "method": "POST",
+          "path": "/api/v1/payments",
+          "request_schema": "providers.airwallex.payment.request.v1"
+        },
+        {
+          "name": "airwallex_beneficiaries",
+          "method": "GET",
+          "path": "/api/v1/beneficiaries"
+        },
+        {
+          "name": "airwallex_create_beneficiary",
+          "method": "POST",
+          "path": "/api/v1/beneficiaries",
+          "request_schema": "providers.airwallex.beneficiary.request.v1"
+        }
+      ]
+    }
+  ]
+}

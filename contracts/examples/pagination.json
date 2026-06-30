@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "id": "robot-001",
+      "status": "running"
+    }
+  ],
+  "limit": 25,
+  "cursor": "cursor-current",
+  "next_cursor": "cursor-next"
+}

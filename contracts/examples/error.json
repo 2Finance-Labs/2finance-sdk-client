@@ -1,0 +1,9 @@
+{
+  "error": "rate_limited",
+  "message": "Too many requests",
+  "code": "HTTP_429",
+  "details": {
+    "retry_after_seconds": 2,
+    "request_id": "req_2finance_001"
+  }
+}

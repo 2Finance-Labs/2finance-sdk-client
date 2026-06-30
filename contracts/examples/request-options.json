@@ -1,0 +1,28 @@
+{
+  "schema": "sdk.request_options.v1",
+  "request": {
+    "method": "POST",
+    "base_url": "https://analytics.example",
+    "path": "/analytics/candles:upsert",
+    "headers": {
+      "X-Trace-ID": "trace-1"
+    },
+    "idempotency_key": "idem-1",
+    "query": {
+      "symbol": "BTC-USDT"
+    },
+    "pagination": {
+      "page": 2,
+      "limit": 25
+    },
+    "timeout_ms": 500,
+    "max_retries": 1
+  },
+  "expected": {
+    "url": "https://analytics.example/analytics/candles:upsert?symbol=BTC-USDT&page=2&limit=25",
+    "headers": {
+      "X-Trace-ID": "trace-1",
+      "Idempotency-Key": "idem-1"
+    }
+  }
+}

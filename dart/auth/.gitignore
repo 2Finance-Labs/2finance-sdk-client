@@ -1,0 +1,10 @@
+.dart_tool/
+build/
+coverage/
+.packages
+pubspec.lock
+
+# Generated test/runtime artifacts
+.test-results/
+__pycache__/
+*.pyc

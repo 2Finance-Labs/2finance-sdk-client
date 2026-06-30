@@ -1,0 +1,11 @@
+{
+  "schema": "matchengine.order_command.v1",
+  "client_order_id": "client-order-001",
+  "idempotency_key": "idem-001",
+  "symbol": "BTC-USDT",
+  "side": "buy",
+  "type": "limit",
+  "quantity": "0.01",
+  "price": "50000.00",
+  "time_in_force": "GTC"
+}

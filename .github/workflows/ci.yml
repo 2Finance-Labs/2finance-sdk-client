@@ -1,0 +1,99 @@
+name: fast-feedback
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  fast-feedback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go/go.mod
+          cache: true
+          cache-dependency-path: go/go.sum
+
+      - name: Download dependencies
+        working-directory: go
+        run: go mod download
+
+      - name: Format check
+        working-directory: go
+        run: test -z "$(gofmt -l . auth analytics hummingbot internal/service keystore matchengine mcp network orchestrator planner providers tradingcontrol protocol tests/harness)"
+
+      - name: Vet
+        working-directory: go
+        run: go vet ./...
+
+      - name: Fast tests
+        working-directory: go
+        run: go test $(go list ./... | grep -v '/tests/e2e')
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate SDK structure
+        run: node tools/validate-sdk-structure.mjs
+
+      - name: JavaScript tests
+        working-directory: javascript
+        run: npm test
+
+      - name: TypeScript typecheck
+        working-directory: typescript
+        run: |
+          npm install
+          npm test
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python tests
+        working-directory: python
+        run: |
+          PYTHONPATH=. python -m unittest discover -s tests -v
+          PYTHONPATH=. python -m py_compile examples/quickstart.py
+          PYTHONPATH=. python -m py_compile examples/request_options.py
+          PYTHONPATH=. python -m py_compile examples/auth_client_credentials.py
+          PYTHONPATH=. python -m py_compile examples/error_handling.py
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: PHP smoke test
+        working-directory: php
+        run: |
+          php -l examples/quickstart.php
+          php -l examples/request_options.php
+          php -l examples/auth_client_credentials.php
+          php -l examples/error_handling.php
+          php tests/SdkClientTest.php
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Java smoke test
+        working-directory: java
+        run: make test
+
+      - name: Java Maven package metadata
+        working-directory: java
+        run: mvn -q -DskipTests package
+
+      - name: C++ smoke test
+        working-directory: cpp
+        run: |
+          cmake -S . -B build
+          cmake --build build
+          ctest --test-dir build --output-on-failure

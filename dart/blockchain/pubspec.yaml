@@ -1,0 +1,25 @@
+name: two_finance_blockchain
+description: "2Finance blockchain SDK (pure Dart)."
+version: 0.0.1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  http: ^1.2.2
+  json_annotation: ^4.9.0
+  mqtt_client: ^10.10.0
+  path: ^1.9.1
+  cryptography: ^2.0.0
+  convert: ^3.1.2
+  web3dart: ^2.6.1
+  uuid: ^4.4.0
+  dotenv: ^4.2.0
+
+
+dev_dependencies:
+  lints: ^5.1.1
+  json_serializable: ^6.9.5
+  build_runner: ^2.5.3
+  test: ^1.26.3
+  mocktail: ^1.0.4

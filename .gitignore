@@ -2,4 +2,17 @@
 .env
 
 # Ignore E2E generated wallet files
-/tests/e2e/wallets/*
+/go/tests/e2e/wallets/*
+
+# Generated test/runtime artifacts
+.test-results/
+__pycache__/
+*.pyc
+.dart_tool/
+build/
+node_modules/
+vendor/
+dist/
+target/
+.gradle/
+cmake-build-*/

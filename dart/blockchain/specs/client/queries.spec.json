@@ -1,0 +1,133 @@
+{
+  "id": "client_queries",
+  "title": "Global client query contract",
+  "owner": "sdk",
+  "status": "active",
+  "layers": ["harness-small", "contract-unit"],
+  "cases": [
+    {
+      "id": "client.list_transactions",
+      "title": "listTransactions sends repository filters",
+      "tags": ["client", "query", "transactions", "go-compat"],
+      "test_refs": ["test/two_finance_blockchain_client_unit_test.dart"],
+      "given": {
+        "from": "$fromPublicKey",
+        "to": "$toPublicKey",
+        "hash": "$transactionHash"
+      },
+      "when": {
+        "client_call": "listTransactions",
+        "args": {
+          "from": "$fromPublicKey",
+          "to": "$toPublicKey",
+          "hash": "$transactionHash",
+          "dataFilter": {
+            "address": "$toPublicKey"
+          },
+          "version": 1,
+          "uuid7": "$uuid7",
+          "page": 1,
+          "limit": 10,
+          "ascending": true
+        }
+      },
+      "then": {
+        "request_method": "get_transactions",
+        "params": {
+          "from": "$fromPublicKey",
+          "to": "$toPublicKey",
+          "hash": "$transactionHash",
+          "data": {
+            "address": "$toPublicKey"
+          },
+          "version": 1,
+          "uuid7": "$uuid7",
+          "page": 1,
+          "limit": 10,
+          "ascending": true
+        }
+      }
+    },
+    {
+      "id": "client.list_logs",
+      "title": "listLogs sends log filters",
+      "tags": ["client", "query", "logs", "go-compat"],
+      "test_refs": ["test/two_finance_blockchain_client_unit_test.dart"],
+      "given": {
+        "contract_address": "$contractAddress",
+        "transaction_hash": "$transactionHash"
+      },
+      "when": {
+        "client_call": "listLogs",
+        "args": {
+          "logType": ["Wallet_Created"],
+          "logIndex": 1,
+          "transactionHash": "$transactionHash",
+          "event": {
+            "address": "$contractAddress"
+          },
+          "contractAddress": "$contractAddress",
+          "page": 1,
+          "limit": 10,
+          "ascending": true
+        }
+      },
+      "then": {
+        "request_method": "get_logs",
+        "params": {
+          "log_type": ["Wallet_Created"],
+          "log_index": 1,
+          "transaction_hash": "$transactionHash",
+          "event": {
+            "address": "$contractAddress"
+          },
+          "contract_address": "$contractAddress",
+          "contract_version": "",
+          "page": 1,
+          "limit": 10,
+          "ascending": true
+        }
+      }
+    },
+    {
+      "id": "client.list_blocks",
+      "title": "listBlocks sends block filters",
+      "tags": ["client", "query", "blocks", "go-compat"],
+      "test_refs": ["test/two_finance_blockchain_client_unit_test.dart"],
+      "given": {
+        "number": 7,
+        "timestamp": "2026-01-02T03:04:05.000Z"
+      },
+      "when": {
+        "client_call": "listBlocks",
+        "args": {
+          "number": 7,
+          "timestamp": "2026-01-02T03:04:05.000Z",
+          "hash": "$blockHash",
+          "previousHash": "$parentHash",
+          "transactionsMerkleRoot": "$txRoot",
+          "logsMerkleRoot": "$logRoot",
+          "statesSnapshotMerkleRoot": "$stateRoot",
+          "page": 1,
+          "limit": 10,
+          "ascending": true
+        }
+      },
+      "then": {
+        "request_method": "get_blocks",
+        "params": {
+          "number": 7,
+          "timestamp": "2026-01-02T03:04:05.000Z",
+          "hash": "$blockHash",
+          "previous_hash": "$parentHash",
+          "transactions_merkle_root": "$txRoot",
+          "logs_merkle_root": "$logRoot",
+          "states_snapshot_merkle_root": "$stateRoot",
+          "page": 1,
+          "limit": 10,
+          "ascending": true
+        }
+      }
+    }
+  ]
+}
