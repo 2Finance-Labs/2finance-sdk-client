@@ -1,0 +1,17 @@
+{
+  "name": "2finance/sdk-client",
+  "description": "Unified PHP client for 2Finance services.",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "TwoFinance\\Sdk\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/SdkClientTest.php"
+  },
+  "require": {
+    "php": ">=8.1"
+  }
+}

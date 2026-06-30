@@ -8,7 +8,7 @@ but not mixed in the same file:
   the network VM;
 - implementation tests: Go tests that keep the behavior executable.
 
-The structure in `tests/specs` and `tests/harness` makes that separation
+The structure in `go/tests/specs` and `go/tests/harness` makes that separation
 explicit. Specs are readable examples. The harness validates that examples stay
 well-formed and gives Go tests a stable contract to execute.
 
@@ -32,21 +32,21 @@ For this codebase, that means:
 ## Repository layout
 
 ```text
-docs/spec-driven-harness.md   Research notes and local conventions.
-docs/spec-driven-development.md Local SDD workflow for this repository.
-docs/spec-authoring.md        YAML authoring guide.
-docs/spec-index.md            Current spec catalog.
-tests/specs/                  Human-readable behavior specs.
-tests/specs/**.yaml           Individual executable examples.
-tests/harness/                Go loader/validator for specs.
-tests/e2e/                    Existing live integration/e2e tests.
+docs/spec-driven-harness.md      Research notes and local conventions.
+docs/spec-driven-development.md  Local SDD workflow for this repository.
+docs/spec-authoring.md           YAML authoring guide.
+docs/spec-index.md               Current spec catalog.
+go/tests/specs/                  Human-readable behavior specs.
+go/tests/specs/**.yaml           Individual executable examples.
+go/tests/harness/                Go loader/validator for specs.
+go/tests/e2e/                    Existing live integration/e2e tests.
 ```
 
 ## Spec lifecycle
 
-1. Capture the behavior in `tests/specs`.
+1. Capture the behavior in `go/tests/specs`.
 2. Link the behavior to a local principle or workflow in `docs`.
-3. Validate the spec with `go test ./tests/harness`.
+3. Validate the spec with `cd go && go test ./tests/harness`.
 4. Add or update a focused Go execution test when the spec needs real IO.
 5. Keep broad e2e tests opt-in when they need MCP, EMQX, or the network VM.
 

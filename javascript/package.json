@@ -1,0 +1,15 @@
+{
+  "name": "@2finance/sdk-client",
+  "version": "0.1.0",
+  "description": "Unified JavaScript client for 2Finance services.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "examples:check": "node --check examples/quickstart.js && node --check examples/request-options.js && node --check examples/auth-client-credentials.js && node --check examples/error-handling.js",
+    "test": "npm run examples:check && node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

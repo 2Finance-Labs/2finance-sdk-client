@@ -1,4 +1,4 @@
-# Spec-driven development for go-client-2finance
+# Spec-driven development for 2finance-sdk-client
 
 Spec-driven development treats specifications as the durable product artifact,
 not as disposable notes created before coding. For this repository, specs should
@@ -29,7 +29,7 @@ Update this document when the team agrees on a new durable rule. Examples:
 
 ### 2. Specify
 
-Add or update a YAML file under `tests/specs`.
+Add or update a YAML file under `go/tests/specs`.
 
 Good specs contain:
 

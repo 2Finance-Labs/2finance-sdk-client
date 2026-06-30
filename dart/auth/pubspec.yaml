@@ -1,0 +1,13 @@
+name: two_finance_auth_sdk
+description: 2Finance Auth SDK for Dart.
+version: 0.1.0
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  http: ^1.2.2
+
+dev_dependencies:
+  lints: ^5.1.1
+  test: ^1.26.3

@@ -1,0 +1,424 @@
+package client_2finance
+
+import (
+	"time"
+
+	"gitlab.com/2finance/2finance-network/blockchain/contract/cashbackV1"
+	"gitlab.com/2finance/2finance-network/blockchain/contract/tokenV1/domain"
+
+	"fmt"
+
+	"gitlab.com/2finance/2finance-network/blockchain/encryption/keys"
+	"gitlab.com/2finance/2finance-network/blockchain/types"
+	"gitlab.com/2finance/2finance-network/blockchain/utils"
+)
+
+// AddCashBack deploys a new cashback program (to = DEPLOY address).
+func (c *NetworkClient) AddCashback(
+	address string,
+	owner string,
+	tokenAddress string,
+	programType string, // "fixed-percentage" | "variable-percentage"
+	percentage string, // string-encoded number
+	startAt time.Time,
+	expiredAt time.Time,
+	paused bool,
+) (types.ContractOutput, error) {
+
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+
+	if owner == "" {
+		return types.ContractOutput{}, fmt.Errorf("owner not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
+	}
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+	if programType != "fixed-percentage" && programType != "variable-percentage" {
+		return types.ContractOutput{}, fmt.Errorf("invalid program_type: %s", programType)
+	}
+	if percentage == "" {
+		return types.ContractOutput{}, fmt.Errorf("percentage not set")
+	}
+
+	to := address
+	method := cashbackV1.METHOD_ADD_CASHBACK
+	data := map[string]interface{}{
+		"address":       address,
+		"owner":         owner,
+		"token_address": tokenAddress,
+		"program_type":  programType,
+		"percentage":    percentage,
+		"start_at":      startAt,
+		"expired_at":    expiredAt,
+		"paused":        paused,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	cashback, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to add cashback: %w", err)
+	}
+	return cashback, nil
+}
+
+// UpdateCashback updates an existing cashback program (to = program address). OnlyOwner.
+func (c *NetworkClient) UpdateCashback(
+	address string,
+	tokenAddress string,
+	programType string, // "fixed-percentage" | "variable-percentage"
+	percentage string,
+	startAt time.Time,
+	expiredAt time.Time,
+) (types.ContractOutput, error) {
+
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if tokenAddress != "" {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+		}
+	}
+	if programType != "fixed-percentage" && programType != "variable-percentage" {
+		return types.ContractOutput{}, fmt.Errorf("invalid program_type: %s", programType)
+	}
+	if percentage == "" {
+		return types.ContractOutput{}, fmt.Errorf("percentage not set")
+	}
+
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	method := cashbackV1.METHOD_UPDATE_CASHBACK
+
+	data := map[string]interface{}{
+		"address":       address,
+		"token_address": tokenAddress, // optional: include if your handler supports it
+		"program_type":  programType,
+		"percentage":    percentage,
+		"start_at":      startAt,
+		"expired_at":    expiredAt,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+}
+
+// PauseCashBack pauses a cashback program. OnlyOwner.
+func (c *NetworkClient) PauseCashback(address string, pause bool) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if !pause {
+		return types.ContractOutput{}, fmt.Errorf("pause must be true: Pause: %t", pause)
+	}
+
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	method := cashbackV1.METHOD_PAUSE_CASHBACK
+
+	data := map[string]interface{}{
+		"address": address,
+		"paused":  pause,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+}
+
+// UnpauseCashback unpauses a cashback program. OnlyOwner.
+func (c *NetworkClient) UnpauseCashback(address string, pause bool) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if pause {
+		return types.ContractOutput{}, fmt.Errorf("pause must be false: Pause: %t", pause)
+	}
+
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	method := cashbackV1.METHOD_UNPAUSE_CASHBACK
+
+	data := map[string]interface{}{
+		"address": address,
+		"paused":  pause,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+}
+
+// DepositCashBack funds the cashback pool (token inferred from state).
+func (c *NetworkClient) DepositCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
+	}
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	method := cashbackV1.METHOD_DEPOSIT_CASHBACK
+
+	data := map[string]interface{}{
+		"address":       address,
+		"token_address": tokenAddress, // token address inferred from state
+		"amount":        amount,
+		"token_type":    tokenType,
+		"uuid":          uuid,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	contractOutput, err := c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to deposit cashback: %w", err)
+	}
+	return contractOutput, nil
+}
+
+// WithdrawCashback withdraws funds from the cashback pool. OnlyOwner.
+func (c *NetworkClient) WithdrawCashbackFunds(address, tokenAddress, amount, tokenType, uuid string) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
+	}
+
+	if tokenAddress == "" {
+		return types.ContractOutput{}, fmt.Errorf("token address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+	}
+
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	method := cashbackV1.METHOD_WITHDRAW_CASHBACK
+
+	data := map[string]interface{}{
+		"address":       address,
+		"amount":        amount,
+		"token_address": tokenAddress, // token address inferred from state
+		"token_type":    tokenType,
+		"uuid":          uuid,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+}
+
+// GetCashBack reads a single cashback state.
+func (c *NetworkClient) GetCashback(address string) (types.ContractOutput, error) {
+	from := c.walletManager.OwnerAddress()
+
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("cashback address must be set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid cashback address: %w", err)
+	}
+
+	method := cashbackV1.METHOD_GET_CASHBACK
+
+	return c.GetState(address, method, nil)
+}
+
+// ListCashBack queries cashback programs with filters + pagination.
+func (c *NetworkClient) ListCashbacks(
+	owner string,
+	tokenAddress string,
+	programType string,
+	paused bool,
+	page int,
+	limit int,
+	ascending bool,
+) (types.ContractOutput, error) {
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	if owner != "" {
+		if err := keys.ValidateEDDSAPublicKeyHex(owner); err != nil {
+			return types.ContractOutput{}, fmt.Errorf("invalid owner address: %w", err)
+		}
+	}
+	if tokenAddress != "" {
+		if err := keys.ValidateEDDSAPublicKeyHex(tokenAddress); err != nil {
+			return types.ContractOutput{}, fmt.Errorf("invalid token address: %w", err)
+		}
+	}
+	if programType != "" && programType != "fixed-percentage" && programType != "variable-percentage" {
+		return types.ContractOutput{}, fmt.Errorf("invalid program_type: %s", programType)
+	}
+	if page < 1 {
+		return types.ContractOutput{}, fmt.Errorf("page must be greater than 0")
+	}
+	if limit < 1 {
+		return types.ContractOutput{}, fmt.Errorf("limit must be greater than 0")
+	}
+
+	method := cashbackV1.METHOD_LIST_CASHBACKS
+	data := map[string]interface{}{
+		"owner":            owner,
+		"program_type":     programType,
+		"paused":           paused,
+		"page":             page,
+		"limit":            limit,
+		"ascending":        ascending,
+		"token_address":    tokenAddress,
+		"contract_version": cashbackV1.CASHBACK_CONTRACT_V1,
+	}
+
+	return c.GetState("", method, data)
+}
+
+func (c *NetworkClient) ClaimCashback(address, amount, tokenType, uuid string) (types.ContractOutput, error) {
+	if address == "" {
+		return types.ContractOutput{}, fmt.Errorf("address not set")
+	}
+	if err := keys.ValidateEDDSAPublicKeyHex(address); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid address: %w", err)
+	}
+	if amount == "" {
+		return types.ContractOutput{}, fmt.Errorf("amount not set")
+	}
+	if tokenType == "" {
+		return types.ContractOutput{}, fmt.Errorf("token type not set")
+	}
+	if tokenType == domain.NON_FUNGIBLE {
+		if uuid == "" {
+			return types.ContractOutput{}, fmt.Errorf("uuid must be set for non-fungible tokens")
+		}
+	}
+
+	from := c.walletManager.OwnerAddress()
+
+	if err := keys.ValidateEDDSAPublicKeyHex(from); err != nil {
+		return types.ContractOutput{}, fmt.Errorf("invalid from address: %w", err)
+	}
+
+	to := address
+	method := cashbackV1.METHOD_CLAIM_CASHBACK
+
+	data := map[string]interface{}{
+		"address":    address,
+		"amount":     amount,
+		"token_type": tokenType,
+		"uuid":       uuid,
+	}
+	version := uint8(1)
+	uuid7, err := utils.NewUUID7()
+	if err != nil {
+		return types.ContractOutput{}, fmt.Errorf("failed to generate UUIDv7: %w", err)
+	}
+
+	return c.SignAndSendTransaction(c.chainId, from, to, method, data, version, uuid7)
+}

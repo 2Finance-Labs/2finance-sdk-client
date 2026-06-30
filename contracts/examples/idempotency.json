@@ -1,0 +1,6 @@
+{
+  "idempotency_key": "idem-001",
+  "operation": "matchengine.order_command",
+  "scope": "client_order_id",
+  "request_id": "req_2finance_001"
+}

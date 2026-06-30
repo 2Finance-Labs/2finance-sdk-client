@@ -2,7 +2,7 @@
 
 ## Papel do repo
 
-`2finance-go-client` deve consumir APIs e protocolos 2Finance a partir de backends, CLIs ou testes. Ele deve suportar bearer tokens OIDC e client credentials para automacao confiavel.
+`2finance-sdk-client` deve consumir APIs e protocolos 2Finance a partir de backends, CLIs ou testes. Ele deve suportar bearer tokens OIDC e client credentials para automacao confiavel.
 
 ## Avaliacao atual
 
@@ -72,5 +72,6 @@ wallet/signing existentes.
 - `auth.RedactSensitive` mascara `Bearer`, `access_token`, `refresh_token`, `id_token`, `client_secret`, senha e `code` em mensagens de erro/logs.
 - Em `TWO_FINANCE_ENV=prod|production|prod_secrets`, token endpoint externo `http://` e rejeitado; `localhost`/`127.0.0.1` segue permitido para testes.
 - O E2E MCP usa `MCP_ACCESS_TOKEN` ou client credentials OIDC por envs `MCP_OIDC_*`/`AUTH_E2E_*` e redige erros HTTP/JSON-RPC antes de reportar falhas.
-- O cliente principal ainda usa MQTT para operacoes de rede; HTTP aparece no
-  harness MCP/E2E.
+- O workspace Go principal fica em `go/` e agrega auth, network, analytics,
+  orchestrator, MCP, planner, trading control, matchengine, hummingbot,
+  keystore e providers.

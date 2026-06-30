@@ -1,0 +1,9 @@
+name: two_finance_sdk_client
+description: Unified Dart client for 2Finance services.
+version: 0.1.0
+
+environment:
+  sdk: ^3.8.1
+
+dev_dependencies:
+  test: ^1.26.3

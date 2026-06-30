@@ -1,6 +1,6 @@
 # Spec authoring guide
 
-Specs live under `tests/specs/**/*.yaml`.
+Specs live under `go/tests/specs/**/*.yaml`.
 
 ## Required fields
 

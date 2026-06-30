@@ -2,6 +2,11 @@
 
 This index groups behavior specs by the boundary they protect.
 
+## SDK implementation
+
+- `implementation-matrix.md`: language-by-language SDK implementation status,
+  examples, checks, and maturity notes.
+
 ## Protocol
 
 - `protocol.prepared-transaction.signing-contract`

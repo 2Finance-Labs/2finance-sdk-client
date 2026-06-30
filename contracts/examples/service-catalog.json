@@ -1,0 +1,16 @@
+{
+  "services": [
+    { "name": "auth", "env": "TWO_FINANCE_AUTH_URL" },
+    { "name": "network", "env": "TWO_FINANCE_NETWORK_URL" },
+    { "name": "analytics", "env": "TWO_FINANCE_ANALYTICS_URL" },
+    { "name": "orchestrator", "env": "TWO_FINANCE_ORCHESTRATOR_URL" },
+    { "name": "mcp", "env": "TWO_FINANCE_MCP_URL" },
+    { "name": "planner", "env": "TWO_FINANCE_MCP_URL" },
+    { "name": "tradingcontrol", "env": "TWO_FINANCE_TRADING_CONTROL_URL" },
+    { "name": "matchengine", "env": "TWO_FINANCE_MATCHENGINE_WS_URL" },
+    { "name": "keystore", "env": "TWO_FINANCE_KEYSTORE_URL" },
+    { "name": "hummingbot", "env": "TWO_FINANCE_HUMMINGBOT_URL" },
+    { "name": "wise", "env": "TWO_FINANCE_WISE_URL" },
+    { "name": "airwallex", "env": "TWO_FINANCE_AIRWALLEX_URL" }
+  ]
+}
