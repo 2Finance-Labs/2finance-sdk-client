@@ -132,6 +132,12 @@
       "description": "Analytics tool APIs for technical analysis, optimization, balances, risk and staking.",
       "operations": [
         {
+          "name": "indicators",
+          "method": "GET",
+          "path": "/analytics/indicators",
+          "response_schema": "analytics.indicators.response.v1"
+        },
+        {
           "name": "technical_analysis",
           "method": "POST",
           "path": "/analytics/technical-analysis:calculate",

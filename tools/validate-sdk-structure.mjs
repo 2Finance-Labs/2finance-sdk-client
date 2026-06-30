@@ -1368,6 +1368,7 @@ const requiredDomainOperations = {
     "create_liquidity_pool",
   ],
   analytics: [
+    "indicators",
     "technical_analysis",
     "upsert_candles",
     "portfolio_optimizer",
