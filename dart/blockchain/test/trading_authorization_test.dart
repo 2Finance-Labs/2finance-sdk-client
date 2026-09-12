@@ -87,4 +87,62 @@ void main() {
     expect(payload.domain, orderCancelAllDomainV1);
     expect(payload.requiredAction, 'order:cancel_all');
   });
+
+  test('market order binds a positive price for authorization limits', () {
+    OrderCommandPayload market(String price) => OrderCommandPayload(
+      chainId: '2finance-testnet',
+      account:
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      engineId: 'engine-btc',
+      symbol: 'BTC/USDT',
+      symbolId: 1,
+      routeEpoch: 7,
+      operation: 'ADD',
+      authorizationMode: OrderAuthorizationMode.session,
+      side: 'BUY',
+      type: 'MARKET',
+      amount: '0.01',
+      price: price,
+      timeInForce: 'IOC',
+      clientOrderId: 'market-1',
+      idempotencyKey: 'market-1-add',
+      sessionId: 'session-1',
+      nonce: 44,
+      expiresAtMs: 1788725000000,
+    );
+
+    expect(market('64000').price, '64000');
+    expect(() => market('0'), throwsFormatException);
+  });
+
+  test('trading sessions cannot gain withdrawal scope or inverted limits', () {
+    TradingSessionAuthorizationPayload session({
+      List<String> actions = const ['order:submit'],
+      String maxOrderNotional = '100',
+      String maxSessionNotional = '500',
+    }) => TradingSessionAuthorizationPayload(
+      chainId: '2finance-testnet',
+      account:
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      sessionId: 'session-1',
+      sessionPublicKey:
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      allowedSymbols: const ['BTC/USDT'],
+      allowedActions: actions,
+      allowedOrderTypes: const ['LIMIT'],
+      maxOrderAmount: '1',
+      maxOrderNotional: maxOrderNotional,
+      maxSessionNotional: maxSessionNotional,
+      issuedAtMs: 1788724000000,
+      expiresAtMs: 1788725000000,
+      nonce: 'cc' * 32,
+      origin: 'https://exchange.2finance.test',
+    );
+
+    expect(() => session(actions: const ['withdraw']), throwsFormatException);
+    expect(
+      () => session(maxOrderNotional: '501', maxSessionNotional: '500'),
+      throwsFormatException,
+    );
+  });
 }

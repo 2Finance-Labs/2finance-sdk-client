@@ -124,6 +124,29 @@ final class TradingSessionAuthorizationPayload {
     KeyManager.validateEDDSAPublicKeyHex(account);
     _requireText(sessionId, 'session_id');
     KeyManager.validateEDDSAPublicKeyHex(sessionPublicKey);
+    if (this.allowedSymbols.any(
+          (value) =>
+              !RegExp(r'^[A-Z0-9._-]{1,32}/[A-Z0-9._-]{1,32}$').hasMatch(value),
+        ) ||
+        this.allowedActions.any(
+          (value) => !const {
+            'order:submit',
+            'order:cancel',
+            'order:cancel_all',
+            'swap:quote',
+            'swap:execute',
+          }.contains(value),
+        ) ||
+        this.allowedOrderTypes.any(
+          (value) => !const {'LIMIT', 'MARKET'}.contains(value),
+        )) {
+      throw const FormatException('trading session permissions are invalid');
+    }
+    if (!_canonicalDecimalLTE(this.maxOrderNotional, this.maxSessionNotional)) {
+      throw const FormatException(
+        'max_order_notional must not exceed max_session_notional',
+      );
+    }
     if (issuedAtMs <= 0 || expiresAtMs <= issuedAtMs) {
       throw const FormatException('session expiration must follow issue time');
     }
@@ -165,6 +188,22 @@ final class TradingSessionAuthorizationPayload {
     'nonce': nonce,
     'origin': origin,
   };
+}
+
+bool _canonicalDecimalLTE(String left, String right) {
+  final leftParts = left.split('.');
+  final rightParts = right.split('.');
+  final scale = [
+    leftParts.length == 2 ? leftParts[1].length : 0,
+    rightParts.length == 2 ? rightParts[1].length : 0,
+  ].reduce((a, b) => a > b ? a : b);
+  BigInt units(List<String> parts) => BigInt.parse(
+    '${parts[0]}${parts.length == 2 ? parts[1] : ''}'.padRight(
+      parts[0].length + scale,
+      '0',
+    ),
+  );
+  return units(leftParts) <= units(rightParts);
 }
 
 final class OrderCommandPayload {
@@ -255,11 +294,10 @@ final class OrderCommandPayload {
         throw const FormatException('ADD type must be LIMIT or MARKET');
       }
       canonicalDecimal(amount, allowZero: false);
-      if (type == 'LIMIT') {
-        canonicalDecimal(price, allowZero: false);
-      } else if (price != '0') {
-        throw const FormatException('MARKET price must be zero');
-      }
+      // MARKET carries a signed, positive execution bound. The engine uses it
+      // for Wallet-approved notional caps and admits a non-resting LIMIT order,
+      // so a compromised browser cannot bypass caps with a fake reference.
+      canonicalDecimal(price, allowZero: false);
       if (!const {'GTC', 'IOC', 'FOK'}.contains(timeInForce)) {
         throw const FormatException('unsupported time_in_force');
       }
