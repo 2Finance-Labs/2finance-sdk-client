@@ -1,0 +1,108 @@
+{
+  "schema": "2finance.exchange_websocket_golden.v1",
+  "market_id": "btc-usdt",
+  "engine_id": "engine-btc-usdt-01",
+  "symbol_id": 1,
+  "route_epoch": 7,
+  "frames": [
+    {
+      "schema": "matchengine.ws_event.v1",
+      "version": 1,
+      "stream": "PUBLIC",
+      "engine_id": "engine-btc-usdt-01",
+      "symbol_id": 1,
+      "route_epoch": 7,
+      "sequence": 40,
+      "previous_sequence": 0,
+      "event_id": "engine-btc-usdt-01:40",
+      "event_type": "BOOK_SNAPSHOT",
+      "timestamp": "2026-09-12T12:00:00Z",
+      "payload": {"bids": [["64218.400000", "0.250000"]], "asks": [["64219.100000", "0.125000"]]}
+    },
+    {
+      "schema": "matchengine.ws_event.v1",
+      "version": 1,
+      "stream": "PUBLIC",
+      "engine_id": "engine-btc-usdt-01",
+      "symbol_id": 1,
+      "route_epoch": 7,
+      "sequence": 41,
+      "previous_sequence": 40,
+      "event_id": "engine-btc-usdt-01:41",
+      "event_type": "BOOK_UPDATED",
+      "timestamp": "2026-09-12T12:00:00.100Z",
+      "payload": {"side": "BID", "price": "64218.400000", "quantity": "0.300000"}
+    },
+    {
+      "schema": "matchengine.ws_event.v1",
+      "version": 1,
+      "stream": "PUBLIC",
+      "engine_id": "engine-btc-usdt-01",
+      "symbol_id": 1,
+      "route_epoch": 7,
+      "sequence": 42,
+      "previous_sequence": 41,
+      "event_id": "engine-btc-usdt-01:42",
+      "event_type": "TRADE_EXECUTED",
+      "timestamp": "2026-09-12T12:00:00.200Z",
+      "payload": {"trade_id": 42, "side": "BUY", "price": "64219.100000", "quantity": "0.010000", "gross_quote": "642.191000"}
+    },
+    {
+      "schema": "matchengine.ws_event.v1",
+      "version": 1,
+      "stream": "PRIVATE",
+      "engine_id": "engine-btc-usdt-01",
+      "symbol_id": 1,
+      "route_epoch": 7,
+      "sequence": 43,
+      "previous_sequence": 0,
+      "event_id": "engine-btc-usdt-01:43",
+      "event_type": "ORDER_ACCEPTED",
+      "timestamp": "2026-09-12T12:00:00.300Z",
+      "account_id": "account-canary-01",
+      "wallet_id": 9,
+      "payload": {"order_id": "order-01", "client_order_id": "client-order-01", "idempotency_key": "idempotency-order-0001", "status": "OPEN", "origin": "manual"}
+    },
+    {
+      "schema": "matchengine.ws_event.v1",
+      "version": 1,
+      "stream": "PRIVATE",
+      "engine_id": "engine-btc-usdt-01",
+      "symbol_id": 1,
+      "route_epoch": 7,
+      "sequence": 44,
+      "previous_sequence": 43,
+      "event_id": "engine-btc-usdt-01:44",
+      "event_type": "BALANCE_UPDATED",
+      "timestamp": "2026-09-12T12:00:00.400Z",
+      "account_id": "account-canary-01",
+      "wallet_id": 9,
+      "payload": {"operation_id": "order-01", "asset": "USDT", "free": "9357.809000", "locked_orders": "642.191000"}
+    }
+  ],
+  "command_responses": [
+    {
+      "schema": "matchengine.order_response.v2",
+      "version": 2,
+      "message_type": "ACK",
+      "client_order_id": "client-order-01",
+      "idempotency_key": "idempotency-order-0001",
+      "timestamp": 1789214400250000000
+    },
+    {
+      "schema": "matchengine.order_response.v2",
+      "version": 2,
+      "message_type": "REJECT",
+      "client_order_id": "client-order-02",
+      "idempotency_key": "idempotency-order-0002",
+      "timestamp": 1789214400500000000,
+      "reason_code": "ROUTE_EPOCH_MISMATCH",
+      "message": "Refresh Market Directory and retry with a new idempotency key."
+    }
+  ],
+  "invalid_frames": [
+    {"case": "route epoch mismatch", "expected": "reject-and-resync", "frame": {"route_epoch": 6, "sequence": 45, "previous_sequence": 44}},
+    {"case": "sequence gap", "expected": "recovery-from-44", "frame": {"route_epoch": 7, "sequence": 47, "previous_sequence": 46}},
+    {"case": "private frame without identity", "expected": "schema-reject", "frame": {"stream": "PRIVATE", "sequence": 45, "previous_sequence": 44}}
+  ]
+}

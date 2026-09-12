@@ -1,4 +1,4 @@
-.PHONY: help test sdk-structure-test go-test go-fmt dart-test dart-blockchain-e2e javascript-test typescript-test python-test php-test java-test cpp-test examples-test
+.PHONY: help test sdk-structure-test exchange-contracts-test go-test go-fmt dart-test dart-blockchain-e2e javascript-test typescript-test python-test php-test java-test cpp-test examples-test
 
 help:
 	@echo "Targets:"
@@ -16,10 +16,13 @@ help:
 	@echo "  examples-test Validate quickstart examples where tooling is available"
 	@echo "  dart-blockchain-e2e Run Dart blockchain live E2E tests"
 
-test: sdk-structure-test go-test dart-test javascript-test typescript-test python-test php-test java-test cpp-test examples-test
+test: sdk-structure-test exchange-contracts-test go-test dart-test javascript-test typescript-test python-test php-test java-test cpp-test examples-test
 
 sdk-structure-test:
 	node tools/validate-sdk-structure.mjs
+
+exchange-contracts-test:
+	node tools/validate-exchange-contracts.mjs
 
 go-test:
 	$(MAKE) -C go test-fast

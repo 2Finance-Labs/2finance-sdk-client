@@ -34,3 +34,11 @@ Python, PHP, Java, and C++ SDK behavior aligned.
   unchanged by the Exchange API, frontend, CCXT, and Hummingbot contract tests.
 - `examples/matchengine-order-command-v3.json`: cross-language golden Ed25519
   command and signature vector for Dart, Go, and C++.
+- `schemas/matchengine-ws-event.v1.json` and
+  `schemas/matchengine-order-response.v2.json`: public/private WebSocket event
+  envelopes and the non-terminal ACK/terminal REJECT command response contract.
+- `examples/exchange-websocket-golden.v1.json`: contiguous BOOK/TRADE/private
+  event vectors, ACK/REJECT examples, and negative route/gap/identity cases.
+
+Run `make exchange-contracts-test` to validate the shared WebSocket golden
+vectors without network access or language-specific adapters.

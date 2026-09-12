@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.2finance.io/exchange/matchengine-ws-event.v1.json",
+  "title": "MatchEngine WebSocket event envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "version", "stream", "engine_id", "symbol_id",
+    "route_epoch", "sequence", "previous_sequence", "event_id",
+    "event_type", "timestamp", "payload"
+  ],
+  "properties": {
+    "schema": {"const": "matchengine.ws_event.v1"},
+    "version": {"const": 1},
+    "stream": {"enum": ["PUBLIC", "PRIVATE"]},
+    "engine_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "symbol_id": {"type": "integer", "minimum": 1},
+    "route_epoch": {"type": "integer", "minimum": 1},
+    "sequence": {"type": "integer", "minimum": 0},
+    "previous_sequence": {"type": "integer", "minimum": 0},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 255},
+    "event_type": {
+      "enum": [
+        "BOOK_SNAPSHOT", "BOOK_UPDATED", "TRADE_EXECUTED",
+        "ORDER_ACCEPTED", "ORDER_PARTIALLY_FILLED", "ORDER_FILLED",
+        "ORDER_CANCEL_PENDING", "ORDER_CANCELED", "ORDER_REJECTED",
+        "ORDER_EXPIRED", "ORDER_EXECUTED", "ORDER_REDUCED",
+        "ORDER_REPLACED", "ORDER_MODIFIED", "BALANCE_SNAPSHOT",
+        "BALANCE_UPDATED", "WALLET_UPDATED", "SWAP_EXECUTED",
+        "SWAP_REJECTED", "UNKNOWN_EVENT"
+      ]
+    },
+    "timestamp": {"type": "string", "format": "date-time"},
+    "account_id": {"type": "string", "minLength": 1, "maxLength": 255},
+    "wallet_id": {"type": "integer", "minimum": 1},
+    "payload": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"stream": {"const": "PRIVATE"}}, "required": ["stream"]},
+      "then": {"required": ["account_id", "wallet_id"]}
+    }
+  ]
+}

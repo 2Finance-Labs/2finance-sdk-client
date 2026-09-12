@@ -134,6 +134,8 @@ for (const contract of [
   "contracts/schemas/request-options.v2.json",
   "contracts/schemas/service-catalog.v2.json",
   "contracts/schemas/market-directory.v1.json",
+  "contracts/schemas/matchengine-ws-event.v1.json",
+  "contracts/schemas/matchengine-order-response.v2.json",
   "contracts/examples/domain-operations.json",
   "contracts/examples/error.json",
   "contracts/examples/idempotency.json",
@@ -141,6 +143,7 @@ for (const contract of [
   "contracts/examples/request-options.json",
   "contracts/examples/service-catalog.json",
   "contracts/examples/market-directory.json",
+  "contracts/examples/exchange-websocket-golden.v1.json",
 ]) {
   exists(contract);
 }
