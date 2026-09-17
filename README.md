@@ -1,3 +1,7 @@
+<!-- 2finance-hub:start -->
+> **Ecossistema 2Finance:** comece pela [arquitetura central](../2finance-docs/standard/docs/architecture/system-overview.mdx), consulte [este componente no mapa](../2finance-docs/standard/docs/architecture/repository-map.md#2finance-sdk-client) e acompanhe o [plano master](../2finance-docs/standard/plans/PLAN-2FINANCE-0001-master.md). A documentação interna deste repositório continua sendo sua fonte de implementação. Mudanças de contratos, dependências ou planos devem ser reconciliadas no hub.
+<!-- 2finance-hub:end -->
+
 # 2Finance SDK Client
 
 Coleção de SDKs oficiais para integrar aplicações à plataforma 2Finance. O
@@ -62,7 +66,7 @@ ambiente integrado. Os principais são Exchange
 ## Links
 
 - Repositório: <https://github.com/2Finance-Labs/2finance-sdk-client>
-- Índice do workspace e todos os endpoints: [`../README.md`](../README.md)
+- Índice do workspace e todos os endpoints: [`../README.md`](../2finance-docs/standard/docs/architecture/repository-map.md#2finance-sdk-client)
 - Contratos: [`contracts/README.md`](contracts/README.md)
 
 Não inclua chaves privadas, tokens ou credenciais em exemplos e fixtures.

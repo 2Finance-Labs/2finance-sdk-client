@@ -2,6 +2,23 @@ import 'package:test/test.dart';
 import 'package:two_finance_blockchain/trading_authorization.dart';
 
 void main() {
+  test('signs an out-of-band domain payload without mutating it', () async {
+    final signer = await Ed25519CanonicalSigner.fromPrivateKeyHex(
+      List.filled(32, '01').join(),
+    );
+    final payload = <String, dynamic>{'schema': 'example.v1', 'value': 7};
+    final signature = await signer.signPayloadForDomain(
+      domain: 'example.domain.v1',
+      payload: payload,
+    );
+    expect(signature, hasLength(128));
+    expect(payload, {'schema': 'example.v1', 'value': 7});
+    expect(
+      canonicalSigningBytesForDomainV1('example.domain.v1', payload),
+      isNotEmpty,
+    );
+  });
+
   test('canonical JSON and domain preamble are deterministic', () {
     final bytes = canonicalSigningBytesV1({
       'z': 2,

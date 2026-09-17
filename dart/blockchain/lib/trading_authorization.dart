@@ -22,6 +22,18 @@ Uint8List canonicalSigningBytesV1(Map<String, dynamic> payload) {
   if (domain.isEmpty) {
     throw const FormatException('domain is required');
   }
+  return canonicalSigningBytesForDomainV1(domain, payload);
+}
+
+/// Canonical bytes for protocols whose frozen wire payload carries its domain
+/// out-of-band (for example `matchengine.swap_request.v1`).
+Uint8List canonicalSigningBytesForDomainV1(
+  String domain,
+  Map<String, dynamic> payload,
+) {
+  if (domain.trim().isEmpty) {
+    throw const FormatException('domain is required');
+  }
   return Uint8List.fromList(
     utf8.encode(
       '$signedMessagePreambleV1\n$domain\n${canonicalJsonV1(payload)}',
@@ -489,6 +501,19 @@ final class Ed25519CanonicalSigner {
       publicKey: publicKey,
       signature: KeyManager.bytesToHex(signature.bytes),
     );
+  }
+
+  /// Signs an exact canonical payload without adding envelope fields. The
+  /// caller owns the versioned payload schema and the verifier fixes `domain`.
+  Future<String> signPayloadForDomain({
+    required String domain,
+    required Map<String, dynamic> payload,
+  }) async {
+    final signature = await Ed25519().sign(
+      canonicalSigningBytesForDomainV1(domain, payload),
+      keyPair: _keyPair,
+    );
+    return KeyManager.bytesToHex(signature.bytes);
   }
 
   Future<SignedAuthorizationEnvelope> signTradingSession(
